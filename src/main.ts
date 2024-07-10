@@ -13,9 +13,9 @@ async function bootstrap() {
   app.use(cookieParser());
 
   if (process.env.APP_ENV === 'dev') {
-    app.enableCors({
-      origin: ['http://localhost:5173'],
-    });
+    // app.enableCors({
+    //   origin: ['http://localhost:5173'],
+    // });
   }
 
   // Handles all error exception

@@ -13,8 +13,8 @@ export class UserService {
   async getUserInfo(publicId: string) {
     const user = await this.db
       .select({
+        name: User.name,
         username: User.username,
-        email: User.email,
       })
       .from(User)
       .where(eq(User.publicId, publicId));
