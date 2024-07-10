@@ -1,4 +1,7 @@
 import { Global, Module } from '@nestjs/common';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { WebSocket } from 'undici';
+
 import {
   ConfigurableDatabaseModule,
   DATABASE_OPTIONS,
@@ -6,7 +9,6 @@ import {
 } from './database.module-definition';
 import { DrizzleService } from './drizzle.service';
 import { DatabaseOptions } from './database-options';
-import { neon } from '@neondatabase/serverless';
 
 @Global()
 @Module({
@@ -17,7 +19,8 @@ import { neon } from '@neondatabase/serverless';
       provide: NEON,
       inject: [DATABASE_OPTIONS],
       useFactory: (databaseOptions: DatabaseOptions) => {
-        return neon(databaseOptions.connectionString);
+        neonConfig.webSocketConstructor = WebSocket;
+        return new Pool({ connectionString: databaseOptions.connectionString });
       },
     },
   ],

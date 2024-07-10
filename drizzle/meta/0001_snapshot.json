@@ -1,6 +1,6 @@
 {
-  "id": "7776591f-2c34-4a5f-ab06-97575a31d9a7",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "9e023626-ad96-46a3-9532-b2c6cb510850",
+  "prevId": "7776591f-2c34-4a5f-ab06-97575a31d9a7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -137,7 +137,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "User_username_unique": {
+          "name": "User_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      }
     },
     "public.UserSession": {
       "name": "UserSession",
