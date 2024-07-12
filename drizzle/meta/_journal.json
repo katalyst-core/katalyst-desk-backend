@@ -15,6 +15,20 @@
       "when": 1720543384061,
       "tag": "0001_ambiguous_blob",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1720715690222,
+      "tag": "0002_polite_james_howlett",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1720718282383,
+      "tag": "0003_rapid_infant_terrible",
+      "breakpoints": true
     }
   ]
 }

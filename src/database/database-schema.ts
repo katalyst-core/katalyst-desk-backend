@@ -15,19 +15,23 @@ export const AuditFields = {
   updatedBy: bigint('updated_by', { mode: 'number' }),
 };
 
+export const PublicID = {
+  publicId: varchar('public_id', { length: 16 }).notNull(),
+};
+
 export const User = pgTable('User', {
   userId: bigserial('user_id', { mode: 'number' }).primaryKey(),
-  publicId: varchar('public_id', { length: 16 }).notNull(),
   name: varchar('name').notNull(),
   username: varchar('username').unique().notNull(),
   email: varchar('email').notNull(),
   emailVerified: boolean('email_verified').default(false),
   ...AuditFields,
+  ...PublicID,
 });
 
 export const BasicUserAuthentication = pgTable('BasicUserAuthentication', {
   userId: bigint('user_id', { mode: 'number' })
-    .references(() => User.userId)
+    .references(() => User.userId, { onDelete: 'cascade' })
     .primaryKey(),
   passwordHash: varchar('password_hash'),
   ...AuditFields,
@@ -36,7 +40,10 @@ export const BasicUserAuthentication = pgTable('BasicUserAuthentication', {
 export const UserSession = pgTable(
   'UserSession',
   {
-    userId: bigint('user_id', { mode: 'number' }).references(() => User.userId),
+    userId: bigint('user_id', { mode: 'number' }).references(
+      () => User.userId,
+      { onDelete: 'cascade' },
+    ),
     sessionToken: varchar('session_token', { length: 16 }),
     ...AuditFields,
   },
@@ -46,3 +53,13 @@ export const UserSession = pgTable(
     };
   },
 );
+
+export const Store = pgTable('Store', {
+  storeId: bigserial('store_id', { mode: 'number' }).primaryKey(),
+  ownerId: bigint('owner_id', { mode: 'number' }).references(
+    () => User.userId,
+    { onDelete: 'no action' },
+  ),
+  name: varchar('name').notNull(),
+  ...PublicID,
+});

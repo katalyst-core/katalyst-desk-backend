@@ -58,7 +58,7 @@ export class AuthService {
         }
       }
 
-      const publicId = this.util.generateToken(16);
+      const publicId = this.util.generatePublicId();
       const user = await tx
         .insert(User)
         .values({
