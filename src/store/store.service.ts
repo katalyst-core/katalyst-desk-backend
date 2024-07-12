@@ -15,8 +15,17 @@ export class StoreService {
     this.db = drizzle.db;
   }
 
-  async createStore(name: string) {
-    await this.db.transaction(async (tx) => {
+  async createStore(name: string, userPublicId: string) {
+    return await this.db.transaction(async (tx) => {
+      const users = await tx.select({ id: User.userId }).from(User).where(eq(User.publicId, userPublicId));
+
+      if (users.length === 0) {
+        throw new BadRequestException({
+          message: 'Cannot find user',
+          code: 'USER_NOT_EXIST'
+        });
+      }
+
       const stores = await tx.select().from(Store).where(eq(Store.name, name));
 
       if (stores.length > 0) {
@@ -28,10 +37,16 @@ export class StoreService {
 
       const publicId = this.util.generatePublicId();
 
-      await tx.insert(Store).values({
+      const store = await tx.insert(Store).values({
         publicId,
         name,
+        ownerId: users[0].id
+      }).returning({
+        id: Store.publicId,
+        name: Store.name,
       });
+
+      return store[0];
     });
   }
 

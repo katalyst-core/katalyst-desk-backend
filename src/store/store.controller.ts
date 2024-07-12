@@ -20,14 +20,18 @@ export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
   @Post('create')
-  async create(@Body() data: CreateStoreDTO) {
+  async create(@Req() req: Request, @Body() data: CreateStoreDTO) {
     const { name } = data;
 
-    await this.storeService.createStore(name);
+    const user = req.user as AccessUser;
+    const userPublicId = user.publicId;
+
+    const store = await this.storeService.createStore(name, userPublicId);
 
     return {
       status: HttpStatus.CREATED,
       message: 'Successfully created a new store',
+      data: store,
     };
   }
 
