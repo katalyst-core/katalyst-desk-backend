@@ -17,12 +17,15 @@ export class StoreService {
 
   async createStore(name: string, userPublicId: string) {
     return await this.db.transaction(async (tx) => {
-      const users = await tx.select({ id: User.userId }).from(User).where(eq(User.publicId, userPublicId));
+      const users = await tx
+        .select({ id: User.userId })
+        .from(User)
+        .where(eq(User.publicId, userPublicId));
 
       if (users.length === 0) {
         throw new BadRequestException({
           message: 'Cannot find user',
-          code: 'USER_NOT_EXIST'
+          code: 'USER_NOT_EXIST',
         });
       }
 
@@ -37,14 +40,17 @@ export class StoreService {
 
       const publicId = this.util.generatePublicId();
 
-      const store = await tx.insert(Store).values({
-        publicId,
-        name,
-        ownerId: users[0].id
-      }).returning({
-        id: Store.publicId,
-        name: Store.name,
-      });
+      const store = await tx
+        .insert(Store)
+        .values({
+          publicId,
+          name,
+          ownerId: users[0].id,
+        })
+        .returning({
+          id: Store.publicId,
+          name: Store.name,
+        });
 
       return store[0];
     });
