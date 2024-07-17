@@ -2,6 +2,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  integer,
   pgTable,
   primaryKey,
   timestamp,
@@ -58,8 +59,24 @@ export const Store = pgTable('Store', {
   storeId: bigserial('store_id', { mode: 'number' }).primaryKey(),
   ownerId: bigint('owner_id', { mode: 'number' }).references(
     () => User.userId,
-    { onDelete: 'no action' },
+    { onDelete: 'cascade' },
   ),
   name: varchar('name').notNull(),
   ...PublicID,
+  ...AuditFields,
+});
+
+export const MasterProduct = pgTable('MasterProduct', {
+  productId: bigserial('product_id', { mode: 'number' }).primaryKey(),
+  storeId: bigint('store_id', { mode: 'number' }).references(
+    () => Store.storeId,
+    { onDelete: 'cascade' },
+  ),
+  name: varchar('name').notNull(),
+  sku: varchar('sku'),
+  description: varchar('description'),
+  stock: integer('stock'),
+  active: boolean('active'),
+  ...PublicID,
+  ...AuditFields,
 });

@@ -6,6 +6,7 @@ import { AppModule } from './app.module';
 import { AllExceptionFilter } from './middleware/all-exception.filter';
 import { ResponseInterceptor } from './middleware/response.interceptor';
 import { HttpException, HttpStatus, ValidationPipe } from '@nestjs/common';
+import { NoCacheInterceptor } from './middleware/no-cache.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,13 +23,20 @@ async function bootstrap() {
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionFilter(httpAdapterHost));
 
-  // Handles response template
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new ResponseInterceptor(), // Handles response template
+    new NoCacheInterceptor(), // Disables CDN and browser cache
+  );
 
   // Handles DTO validation
   app.useGlobalPipes(
     new ValidationPipe({
       disableErrorMessages: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      whitelist: true,
       exceptionFactory: (err) => {
         return new HttpException(
           {

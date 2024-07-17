@@ -1,0 +1,1 @@
+ALTER TABLE "MasterProduct" ADD COLUMN "public_id" varchar(16) NOT NULL;
