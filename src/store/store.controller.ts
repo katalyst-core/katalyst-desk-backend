@@ -9,10 +9,11 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 
-import { JWTAccess } from 'src/auth/strategy/jwt-access.strategy';
 import { StoreService } from './store.service';
 import { CreateStoreDTO } from './dto/create-store-dto';
 import { AccessUser } from 'src/auth/auth.type';
+import { JWTAccess } from 'src/auth/strategy/jwt-access.strategy';
+import { User } from 'src/decorator/User';
 
 @UseGuards(JWTAccess)
 @Controller('store')
@@ -20,12 +21,10 @@ export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
   @Post('create')
-  async create(@Req() req: Request, @Body() data: CreateStoreDTO) {
-    const { name } = data;
-
-    const user = req.user as AccessUser;
+  async create(@User() user: AccessUser, @Body() data: CreateStoreDTO) {
     const userPublicId = user.publicId;
 
+    const { name } = data;
     const store = await this.storeService.createStore(name, userPublicId);
 
     return {

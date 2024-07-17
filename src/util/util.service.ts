@@ -32,7 +32,7 @@ export class UtilService {
     tableOptions: TableOptionsDTO,
   ) {
     const { sort, page } = tableOptions;
-    const limit = tableOptions.limit || 3;
+    const limit = tableOptions.limit || 10; // Default limit to 10
 
     // Handle sorting
     if (sort) {
