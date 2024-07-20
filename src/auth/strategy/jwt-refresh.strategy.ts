@@ -6,22 +6,23 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { and, eq } from 'drizzle-orm';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
 import { RefreshUser } from '../auth.type';
-import { User, UserSession } from 'src/database/database-schema';
+import { Database } from 'src/database/database';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class JWTRefreshStrategy extends PassportStrategy(
   Strategy,
   'jwt-refresh',
 ) {
-  private db: Drizzle;
-
-  constructor(config: ConfigService, drizzle: DrizzleService) {
+  constructor(
+    config: ConfigService,
+    private readonly db: Database,
+    private readonly util: UtilService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => req?.cookies?.Refresh,
@@ -30,28 +31,23 @@ export class JWTRefreshStrategy extends PassportStrategy(
       secretOrKey: config.get<string>('JWT_REFRESH_SECRET'),
       passReqToCallback: true,
     });
-
-    this.db = drizzle.db;
   }
 
   async validate(_request: Request, payload: any) {
-    const { sub: publicId, session_token: sessionToken } = payload;
+    const { sub: shortUserId, session_token: sessionToken } = payload;
+
+    const userId = this.util.restoreUUID(shortUserId);
 
     const user = await this.db
-      .select()
-      .from(User)
-      .innerJoin(UserSession, eq(User.userId, UserSession.userId))
-      .where(
-        and(
-          eq(User.publicId, publicId),
-          eq(UserSession.sessionToken, sessionToken),
-        ),
-      );
+      .selectFrom('userSession')
+      .where('userSession.userId', '=', userId)
+      .where('userSession.sessionToken', '=', sessionToken)
+      .executeTakeFirst();
 
-    if (user.length === 0) throw new UnauthorizedException();
+    if (!user) throw new UnauthorizedException();
 
     return {
-      publicId: payload.sub,
+      userId,
       sessionToken,
     } satisfies RefreshUser;
   }

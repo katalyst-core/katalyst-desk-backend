@@ -4,10 +4,8 @@ import {
   Get,
   HttpStatus,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
 
 import { StoreService } from './store.service';
 import { CreateStoreDTO } from './dto/create-store-dto';
@@ -22,10 +20,10 @@ export class StoreController {
 
   @Post('create')
   async create(@User() user: AccessUser, @Body() data: CreateStoreDTO) {
-    const userPublicId = user.publicId;
+    const { userId } = user;
 
     const { name } = data;
-    const store = await this.storeService.createStore(name, userPublicId);
+    const store = await this.storeService.createStore(name, userId);
 
     return {
       status: HttpStatus.CREATED,
@@ -35,11 +33,10 @@ export class StoreController {
   }
 
   @Get('list')
-  async list(@Req() req: Request) {
-    const user = req.user as AccessUser;
-    const userPublicId = user.publicId;
+  async list(@User() user: AccessUser) {
+    const { userId } = user;
 
-    const stores = await this.storeService.listUserStores(userPublicId);
+    const stores = await this.storeService.listUserStores(userId);
 
     return {
       message: `Successfully retrieved user's stores`,

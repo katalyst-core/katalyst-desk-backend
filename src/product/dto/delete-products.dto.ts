@@ -4,5 +4,5 @@ export class DeleteProductsDTO {
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
-  ids: string[];
+  product_id: string[];
 }

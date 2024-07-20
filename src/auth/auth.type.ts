@@ -1,13 +1,15 @@
+import { UUID } from 'crypto';
+
 export interface LocalUser {
-  publicId: string;
+  userId: UUID;
 }
 
 export interface AccessUser {
-  publicId: string;
+  userId: UUID;
 }
 
 export interface RefreshUser {
-  publicId: string;
+  userId: UUID;
   sessionToken: string;
 }
 

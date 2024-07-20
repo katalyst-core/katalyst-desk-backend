@@ -9,14 +9,15 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
-import { AccessUser } from '../auth.type';
+import { AccessContent, AccessUser } from '../auth.type';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class JWTAccessStrategy extends PassportStrategy(
   Strategy,
   'jwt-access',
 ) {
-  constructor(private readonly config: ConfigService) {
+  constructor(config: ConfigService, private readonly util: UtilService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => req?.cookies?.Authentication,
@@ -27,9 +28,12 @@ export class JWTAccessStrategy extends PassportStrategy(
     });
   }
 
-  async validate(_request: Request, payload: any) {
+  async validate(_request: Request, payload: AccessContent) {
+    const { sub: shortUserId } = payload;
+    const userId = this.util.restoreUUID(shortUserId);
+
     return {
-      publicId: payload.sub,
+      userId,
     } satisfies AccessUser;
   }
 }

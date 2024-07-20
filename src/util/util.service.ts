@@ -1,18 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { count, sql } from 'drizzle-orm';
-import { PgSelect } from 'drizzle-orm/pg-core';
+import { UUID } from 'crypto';
+import { SelectQueryBuilder, Simplify, sql } from 'kysely';
 import { customAlphabet } from 'nanoid';
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
-import { TableOptionsDTO } from 'src/product/dto/table-options-dto';
+import * as short from 'short-uuid';
+
+import { Database } from 'src/database/database';
+import { TableOptionsDTO } from './dto/table-options-dto';
 
 @Injectable()
 export class UtilService {
   private readonly defaultString = '0123456789abcdefghijklmnopqrstuvwxyz';
-  private readonly db: Drizzle;
+  private readonly translator = short();
 
-  constructor(drizzle: DrizzleService) {
-    this.db = drizzle.db;
-  }
+  constructor(private readonly db: Database) {}
 
   generateToken(length: number): string {
     return customAlphabet(this.defaultString, length)();
@@ -22,17 +22,49 @@ export class UtilService {
     return this.generateToken(16);
   }
 
+  shortenUUID(value: UUID): string {
+    try {
+      return this.translator.fromUUID(value);
+    } catch (_) {
+      throw new BadRequestException({
+        message: 'Invalid request',
+        code: 'INVALID_REQUEST',
+      });
+    }
+  }
+
+  restoreUUID(value: string): UUID {
+    try {
+      return this.translator.toUUID(value) as UUID;
+    } catch (_) {
+      throw new BadRequestException({
+        message: 'Invalid request',
+        code: 'INVALID_REQUEST',
+      });
+    }
+  }
+
   isValidName(name: string) {
     const namePattern = /^[a-zA-Z0-9_]+$/;
     return namePattern.test(name);
   }
 
-  async withTableOptions<T extends PgSelect>(
-    builder: T,
+  async executeWithTableOptions<T>(
+    builder: SelectQueryBuilder<any, any, T>,
     tableOptions: TableOptionsDTO,
+    transform?: (result: Simplify<T>) => unknown,
   ) {
     const { sort, page } = tableOptions;
     const limit = tableOptions.limit || 10; // Default limit to 10
+
+    // Obtain the table item count
+    const totalItemQuery = await builder
+      .clearSelect()
+      .select(this.db.fn.countAll<number>().as('total'))
+      .executeTakeFirst();
+    const totalItem = totalItemQuery.total;
+    const totalPage = Math.ceil(totalItem / limit);
+    const currentPage = Math.min(page, totalPage) || 1;
 
     // Handle sorting
     if (sort) {
@@ -47,30 +79,22 @@ export class UtilService {
           });
         }
 
-        builder.orderBy(sql`${sql.raw(column)} ${sql.raw(type)}`);
+        builder = builder.orderBy(column, sql`${sql.raw(type)}`);
       });
     }
 
-    // Obtain the table item count
-    const baseQuery = this.db.$with('bq').as(builder);
-    const totalItemQuery = await this.db
-      .with(baseQuery)
-      .select({ count: count() })
-      .from(baseQuery);
-    const totalItem = totalItemQuery[0].count;
-    const totalPage = Math.ceil(totalItem / limit);
-    const currentPage = Math.min(page, totalPage) || 1;
-
     // Handle pagination
-    builder.limit(limit);
+    builder = builder.limit(limit);
     if (page) {
-      builder.offset((currentPage - 1) * limit);
+      builder = builder.offset((currentPage - 1) * limit);
     }
 
-    const result = await builder;
+    const result = await builder.execute();
+
+    const tableData = transform ? result.map(transform) : result;
 
     const data = {
-      table: result,
+      table: tableData,
       pagination: {
         current_page: currentPage,
         per_page: limit,

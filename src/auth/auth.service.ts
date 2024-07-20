@@ -1,31 +1,24 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { and, eq, or } from 'drizzle-orm';
 
 import * as bcrypt from 'bcrypt';
 
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
-import {
-  BasicUserAuthentication,
-  User,
-  UserSession,
-} from 'src/database/database-schema';
 import { UtilService } from 'src/util/util.service';
 import { CreateUserDTO } from './dto/create-user-dto';
 import { AccessContent, RefreshContent } from './auth.type';
+import { Database } from 'src/database/database';
+import { UUID } from 'crypto';
+import { sql } from 'kysely';
 
 @Injectable()
 export class AuthService {
-  private db: Drizzle;
   constructor(
-    drizzle: DrizzleService,
+    private readonly db: Database,
     private readonly util: UtilService,
     private readonly config: ConfigService,
     private readonly jwt: JwtService,
-  ) {
-    this.db = drizzle.db;
-  }
+  ) {}
 
   async createUser(data: CreateUserDTO) {
     const { name, username, email, password } = data;
@@ -33,53 +26,60 @@ export class AuthService {
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
 
-    await this.db.transaction(async (tx) => {
+    await this.db.transaction().execute(async (tx) => {
       const exUser = await tx
-        .select({
-          username: User.username,
-          email: User.email,
-        })
-        .from(User)
-        .where(or(eq(User.username, username), eq(User.email, email)));
+        .selectFrom('user')
+        .select(['user.username', 'user.email'])
+        .where((eb) =>
+          eb.or([
+            eb('user.username', 'ilike', username),
+            eb('user.email', 'ilike', email),
+          ]),
+        )
+        .executeTakeFirst();
 
-      if (exUser.length > 0) {
-        if (exUser[0].username === username) {
-          throw new BadRequestException({
-            message: 'An account with that username already exist',
-            code: 'ACCOUNT_USERNAME_ALREADY_EXIST',
-          });
-        }
-
-        if (exUser[0].email === email) {
+      if (exUser) {
+        if (exUser.email.toLowerCase() === email.toLowerCase()) {
           throw new BadRequestException({
             message: 'An account with that email already exist',
             code: 'ACCOUNT_EMAIL_ALREADY_EXIST',
           });
         }
+
+        if (exUser.username.toLowerCase() === username.toLowerCase()) {
+          throw new BadRequestException({
+            message: 'An account with that username already exist',
+            code: 'ACCOUNT_USERNAME_ALREADY_EXIST',
+          });
+        }
       }
 
-      const publicId = this.util.generatePublicId();
       const user = await tx
-        .insert(User)
+        .insertInto('user')
         .values({
-          publicId,
           name,
           username,
           email,
         })
-        .returning({
-          userId: User.userId,
-        });
-      await tx.insert(BasicUserAuthentication).values({
-        userId: user[0].userId,
-        passwordHash,
-      });
+        .returning('user.userId')
+        .executeTakeFirst();
+
+      await tx
+        .insertInto('basicUserAuthentication')
+        .values({
+          userId: user.userId,
+          passwordHash,
+          created_by: user.userId,
+        })
+        .execute();
     });
   }
 
-  async createAccessToken(publicId: string) {
+  async createAccessToken(userId: UUID) {
+    const shortUserId = this.util.shortenUUID(userId);
+
     const payload = {
-      sub: publicId,
+      sub: shortUserId,
     } satisfies AccessContent;
 
     const tokenSecret = this.config.get<string>('JWT_ACCESS_SECRET');
@@ -100,39 +100,49 @@ export class AuthService {
     };
   }
 
-  async createRefreshToken(publicId: string, oldSessionToken?: string) {
+  async createRefreshToken(userId: UUID, oldSessionToken?: string) {
     const user = await this.db
-      .select({ userId: User.userId })
-      .from(User)
-      .where(eq(User.publicId, publicId));
+      .selectFrom('user')
+      .select('user.userId')
+      .where('user.userId', '=', userId)
+      .executeTakeFirst();
 
-    if (user.length === 0) {
+    if (!user) {
       throw new BadRequestException('Unable to find user');
     }
 
-    if (oldSessionToken) {
-      await this.db
-        .delete(UserSession)
-        .where(
-          and(
-            eq(UserSession.userId, user[0].userId),
-            eq(UserSession.sessionToken, oldSessionToken),
-          ),
-        );
-    }
-
-    const sessionToken = this.util.generateToken(16);
+    const sessionToken = this.util.generateToken(12);
     try {
-      await this.db.insert(UserSession).values({
-        userId: user[0].userId,
-        sessionToken,
-      });
+      if (oldSessionToken) {
+        await this.db
+          .updateTable('userSession')
+          .set({
+            userId,
+            sessionToken,
+            updated_at: sql`CURRENT_TIMESTAMP`,
+            updated_by: userId,
+          })
+          .where('userSession.userId', '=', userId)
+          .where('userSession.sessionToken', '=', oldSessionToken)
+          .execute();
+      } else {
+        await this.db
+          .insertInto('userSession')
+          .values({
+            userId,
+            sessionToken,
+            created_by: userId,
+          })
+          .execute();
+      }
     } catch (err) {
       throw new BadRequestException('Unable to create session token');
     }
 
+    const shortUserId = this.util.shortenUUID(userId);
+
     const payload = {
-      sub: publicId,
+      sub: shortUserId,
       session_token: sessionToken,
     } satisfies RefreshContent;
 

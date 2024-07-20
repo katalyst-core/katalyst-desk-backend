@@ -1,81 +1,75 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { Injectable } from '@nestjs/common';
 
-import { MasterProduct, Store, User } from 'src/database/database-schema';
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
 import { UtilService } from 'src/util/util.service';
-import { TableOptionsDTO } from './dto/table-options-dto';
+import { TableOptionsDTO } from '../util/dto/table-options-dto';
+import { Database } from 'src/database/database';
+import { UUID } from 'crypto';
 
 @Injectable()
 export class ProductService {
-  private db: Drizzle;
+  private readonly dbx;
   constructor(
-    drizzle: DrizzleService,
+    private readonly db: Database,
     private readonly util: UtilService,
-  ) {
-    this.db = drizzle.db;
-  }
+  ) {}
 
-  async getProductList(
-    storePublicId: string,
-    userPublicId: string,
+  async getStoreProductList(
+    storeId: UUID,
+    userId: UUID,
     tableOptions: TableOptionsDTO,
   ) {
     const productBuilder = this.db
-      .select({
-        product_id: MasterProduct.publicId,
-        name: MasterProduct.name,
-        sku: MasterProduct.sku,
-        active: MasterProduct.active,
-      })
-      .from(MasterProduct)
-      .innerJoin(Store, eq(Store.publicId, storePublicId))
-      .innerJoin(User, eq(User.userId, Store.ownerId))
-      .where(
-        and(
-          eq(MasterProduct.storeId, Store.storeId),
-          eq(User.publicId, userPublicId),
-        ),
-      )
-      .$dynamic();
+      .selectFrom('masterProduct')
+      .innerJoin('store', 'store.storeId', 'masterProduct.storeId')
+      .select([
+        'masterProduct.productId',
+        'masterProduct.name',
+        'masterProduct.sku',
+        'masterProduct.active',
+      ])
+      .where('masterProduct.storeId', '=', storeId)
+      .where('store.ownerId', '=', userId);
 
-    const products = await this.util.withTableOptions(
+    const products = await this.util.executeWithTableOptions(
       productBuilder,
       tableOptions,
+      (result) => {
+        const { productId, name, sku, active } = result;
+        const shortProductId = this.util.shortenUUID(productId);
+
+        return {
+          product_id: shortProductId,
+          name,
+          sku,
+          active,
+        };
+      },
     );
 
     return products;
   }
 
-  async deleteProducts(productIds: string[], userPublicId: string) {
-    await this.db.transaction(async (tx) => {
-      const store = tx
-        .$with('store')
-        .as(
-          this.db
-            .select({ store_id: Store.storeId })
-            .from(Store)
-            .innerJoin(User, eq(User.userId, Store.ownerId))
-            .where(eq(User.publicId, userPublicId)),
-        );
-
-      const deleteProducts = await tx
-        .with(store)
-        .delete(MasterProduct)
+  async deleteProducts(productIds: UUID[], userId: UUID) {
+    return await this.db.transaction().execute(async (tx) => {
+      const deleted = await tx
+        .deleteFrom('masterProduct')
         .where(
-          and(
-            inArray(MasterProduct.storeId, sql`(select * from ${store})`),
-            inArray(MasterProduct.publicId, productIds),
-          ),
+          'masterProduct.storeId',
+          'in',
+          tx
+            .selectFrom('store')
+            .select('store.storeId')
+            .where('store.ownerId', '=', userId),
         )
-        .returning({ id: MasterProduct.productId });
+        .where('masterProduct.productId', 'in', productIds)
+        .executeTakeFirst();
 
-      if (productIds.length !== deleteProducts.length) {
-        throw new BadRequestException({
-          message: 'Invalid request',
-          code: 'INVALID_REQUEST',
-        });
-      }
+      const totalSuccess = deleted.numDeletedRows;
+      const totalFailed = BigInt(productIds.length) - totalSuccess;
+      return {
+        total_success: Number(totalSuccess),
+        total_failed: Number(totalFailed.toString()),
+      };
     });
   }
 }

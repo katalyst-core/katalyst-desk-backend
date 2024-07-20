@@ -1,26 +1,32 @@
 import { Global, Module } from '@nestjs/common';
-import { Pool, neonConfig } from '@neondatabase/serverless';
 import { WebSocket } from 'undici';
 
 import {
   ConfigurableDatabaseModule,
   DATABASE_OPTIONS,
-  NEON,
 } from './database.module-definition';
-import { DrizzleService } from './drizzle.service';
 import { DatabaseOptions } from './database-options';
+import { Database } from './database';
+import { NeonDialect } from 'kysely-neon';
+import { CamelCasePlugin } from 'kysely';
 
 @Global()
 @Module({
-  exports: [DrizzleService],
+  exports: [Database],
   providers: [
-    DrizzleService,
     {
-      provide: NEON,
+      provide: Database,
       inject: [DATABASE_OPTIONS],
       useFactory: (databaseOptions: DatabaseOptions) => {
-        neonConfig.webSocketConstructor = WebSocket;
-        return new Pool({ connectionString: databaseOptions.connectionString });
+        const dialect = new NeonDialect({
+          connectionString: databaseOptions.connectionString,
+          webSocketConstructor: WebSocket,
+        });
+
+        return new Database({
+          dialect,
+          plugins: [new CamelCasePlugin()],
+        });
       },
     },
   ],

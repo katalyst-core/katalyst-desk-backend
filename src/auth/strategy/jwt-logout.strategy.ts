@@ -7,21 +7,22 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { and, eq } from 'drizzle-orm';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
-import { User, UserSession } from 'src/database/database-schema';
+import { Database } from 'src/database/database';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class JWTLogoutStrategy extends PassportStrategy(
   Strategy,
   'jwt-logout',
 ) {
-  private db: Drizzle;
-
-  constructor(config: ConfigService, drizzle: DrizzleService) {
+  constructor(
+    config: ConfigService,
+    private readonly db: Database,
+    private readonly util: UtilService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => req?.cookies?.Refresh,
@@ -30,31 +31,29 @@ export class JWTLogoutStrategy extends PassportStrategy(
       secretOrKey: config.get<string>('JWT_REFRESH_SECRET'),
       passReqToCallback: true,
     });
-
-    this.db = drizzle.db;
   }
 
   async validate(_request: Request, payload: any) {
-    const { sub: publicId, session_token: sessionToken } = payload;
+    const { sub: shortUserId, session_token: sessionToken } = payload;
+
+    const userId = this.util.restoreUUID(shortUserId);
 
     try {
       const user = await this.db
-        .select({ userId: User.userId })
-        .from(User)
-        .where(eq(User.publicId, publicId));
+        .selectFrom('user')
+        .select('user.userId')
+        .where('user.userId', '=', userId)
+        .executeTakeFirst();
 
-      if (user.length === 0) {
+      if (!user) {
         throw new BadRequestException();
       }
 
       await this.db
-        .delete(UserSession)
-        .where(
-          and(
-            eq(UserSession.userId, user[0].userId),
-            eq(UserSession.sessionToken, sessionToken),
-          ),
-        );
+        .deleteFrom('userSession')
+        .where('userSession.userId', '=', userId)
+        .where('userSession.sessionToken', '=', sessionToken)
+        .execute();
     } catch (err) {
       console.log(err);
       // Log something here

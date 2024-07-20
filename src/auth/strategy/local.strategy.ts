@@ -4,50 +4,49 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
-import { eq, or } from 'drizzle-orm';
 import { Strategy } from 'passport-local';
 import { Observable } from 'rxjs';
 import * as bcrypt from 'bcrypt';
 
-import { User, BasicUserAuthentication } from 'src/database/database-schema';
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
 import { LocalUser } from '../auth.type';
+import { Database } from 'src/database/database';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
-  private db: Drizzle;
-  constructor(private readonly drizzle: DrizzleService) {
+  constructor(private readonly db: Database) {
     super({
       username: 'username',
       password: 'password',
     });
-
-    this.db = this.drizzle.db;
   }
 
   async validate(username: string, password: string): Promise<any> {
     const user = await this.db
-      .select({
-        publicId: User.publicId,
-        passwordHash: BasicUserAuthentication.passwordHash,
-      })
-      .from(User)
+      .selectFrom('user')
       .innerJoin(
-        BasicUserAuthentication,
-        eq(User.userId, BasicUserAuthentication.userId),
+        'basicUserAuthentication',
+        'user.userId',
+        'basicUserAuthentication.userId',
       )
-      .where(or(eq(User.username, username), eq(User.email, username)));
+      .select(['user.userId', 'basicUserAuthentication.passwordHash'])
+      .where((eb) =>
+        eb.or([
+          eb('user.username', '=', username),
+          eb('user.email', '=', username),
+        ]),
+      )
+      .executeTakeFirst();
 
     const exception = new UnauthorizedException({
       message: 'Unable to find account',
       code: 'UNABLE_TO_FIND_ACCOUNT',
     });
 
-    if (user.length === 0) {
+    if (!user) {
       throw exception;
     }
 
-    const { publicId, passwordHash } = user[0];
+    const { userId, passwordHash } = user;
 
     const isPasswordValid = await bcrypt.compare(password, passwordHash);
     if (!isPasswordValid) {
@@ -55,7 +54,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      publicId,
+      userId,
     } satisfies LocalUser;
   }
 }

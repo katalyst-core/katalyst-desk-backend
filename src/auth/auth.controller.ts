@@ -40,11 +40,11 @@ export class AuthController {
     }
 
     const user = req.user as LocalUser;
-    const publicID = user.publicId;
+    const { userId } = user;
 
     const tokens = await Promise.all([
-      this.authService.createAccessToken(publicID),
-      this.authService.createRefreshToken(publicID),
+      this.authService.createAccessToken(userId),
+      this.authService.createRefreshToken(userId),
     ]);
 
     tokens.forEach((token) => {
@@ -65,12 +65,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const user = req.user as RefreshUser;
-    const sessionToken = user.sessionToken;
-    const publicID = user.publicId;
+    const { userId, sessionToken } = user;
 
     const tokens = await Promise.all([
-      this.authService.createAccessToken(publicID),
-      this.authService.createRefreshToken(publicID, sessionToken),
+      this.authService.createAccessToken(userId),
+      this.authService.createRefreshToken(userId, sessionToken),
     ]);
 
     tokens.forEach((token) => {

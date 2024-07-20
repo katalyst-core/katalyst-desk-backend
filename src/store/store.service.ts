@@ -1,69 +1,60 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { UUID } from 'crypto';
+import { Database } from 'src/database/database';
 
-import { Store, User } from 'src/database/database-schema';
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
 import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class StoreService {
-  private readonly db: Drizzle;
   constructor(
-    drizzle: DrizzleService,
+    private readonly db: Database,
     private readonly util: UtilService,
-  ) {
-    this.db = drizzle.db;
-  }
+  ) {}
 
-  async createStore(name: string, userPublicId: string) {
-    return await this.db.transaction(async (tx) => {
-      const users = await tx
-        .select({ id: User.userId })
-        .from(User)
-        .where(eq(User.publicId, userPublicId));
+  async createStore(name: string, userId: UUID) {
+    return await this.db.transaction().execute(async (tx) => {
+      const store = await tx
+        .selectFrom('store')
+        .where('store.name', 'ilike', name)
+        .executeTakeFirst();
 
-      if (users.length === 0) {
-        throw new BadRequestException({
-          message: 'Cannot find user',
-          code: 'USER_NOT_EXIST',
-        });
-      }
-
-      const stores = await tx.select().from(Store).where(eq(Store.name, name));
-
-      if (stores.length > 0) {
+      if (store) {
         throw new BadRequestException({
           message: 'A store with that name already exist',
           code: 'STORE_NAME_ALREADY_EXIST',
         });
       }
 
-      const publicId = this.util.generatePublicId();
-
-      const store = await tx
-        .insert(Store)
+      const newStore = await tx
+        .insertInto('store')
         .values({
-          publicId,
           name,
-          ownerId: users[0].id,
+          ownerId: userId,
+          created_by: userId,
         })
-        .returning({
-          id: Store.publicId,
-          name: Store.name,
-        });
+        .returning(['store.storeId', 'store.name'])
+        .executeTakeFirst();
 
-      return store[0];
+      return newStore;
     });
   }
 
-  async listUserStores(userPublicId: string) {
-    const stores = await this.db
-      .select({
-        id: Store.publicId,
-        name: Store.name,
-      })
-      .from(Store)
-      .innerJoin(User, eq(User.publicId, userPublicId));
+  async listUserStores(userId: UUID) {
+    const qStores = await this.db
+      .selectFrom('store')
+      .select(['store.storeId', 'store.name'])
+      .where('store.ownerId', '=', userId)
+      .execute();
+
+    const stores = qStores.map((store) => {
+      const { storeId, name } = store;
+      const shortStoreId = this.util.shortenUUID(storeId);
+
+      return {
+        id: shortStoreId,
+        name,
+      };
+    });
 
     return stores;
   }

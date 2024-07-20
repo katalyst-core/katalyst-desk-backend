@@ -1,31 +1,31 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { User } from 'src/database/database-schema';
-import { Drizzle, DrizzleService } from 'src/database/drizzle.service';
+import { UUID } from 'crypto';
+import { Database } from 'src/database/database';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class UserService {
-  private readonly db: Drizzle;
-  constructor(drizzle: DrizzleService) {
-    this.db = drizzle.db;
-  }
+  constructor(
+    private readonly db: Database,
+    private readonly util: UtilService,
+  ) {}
 
-  async getUserInfo(publicId: string) {
+  async getUserInfo(userId: UUID) {
     const user = await this.db
-      .select({
-        name: User.name,
-        username: User.username,
-      })
-      .from(User)
-      .where(eq(User.publicId, publicId));
+      .selectFrom('user')
+      .select(['user.name', 'user.username'])
+      .where('user.userId', '=', userId)
+      .executeTakeFirst();
 
-    if (user.length === 0) {
+    if (!user) {
       throw new BadRequestException('Unable to find user');
     }
 
+    const shortUserId = this.util.shortenUUID(userId);
+
     return {
-      id: publicId,
-      ...user[0],
+      id: shortUserId,
+      ...user,
     };
   }
 }
