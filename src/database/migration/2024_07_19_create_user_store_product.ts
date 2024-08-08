@@ -49,6 +49,11 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
 
   await db.schema
+    .createType('product_condition')
+    .asEnum(['new', 'used'])
+    .execute();
+
+  await db.schema
     .createTable('master_product')
     .addColumn('product_id', 'uuid', (col) =>
       col.primaryKey().defaultTo(sql`gen_random_uuid()`),
@@ -58,9 +63,61 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     )
     .addColumn('name', 'varchar', (col) => col.notNull())
     .addColumn('sku', 'varchar')
-    .addColumn('description', 'varchar')
-    .addColumn('stock', 'integer')
+    .addColumn('description', 'varchar', (col) => col.notNull())
+    .addColumn('stock', 'integer', (col) => col.notNull())
+    .addColumn('price', 'integer', (col) => col.notNull())
+    .addColumn('discount_price', 'integer')
+    .addColumn('discount_percentage', 'integer')
+    .addColumn('weight', 'integer', (col) => col.notNull())
+    .addColumn('images', sql`varchar[]`, (col) => col.notNull())
+    .addColumn('videos', sql`varchar[]`)
+    .addColumn('dimension_width', 'integer', (col) => col.notNull())
+    .addColumn('dimension_height', 'integer', (col) => col.notNull())
+    .addColumn('dimension_length', 'integer', (col) => col.notNull())
+    .addColumn('brand', 'varchar')
+    .addColumn('condition', sql`product_condition`, (col) => col.notNull())
+    .addColumn('preorder', 'boolean', (col) => col.defaultTo(false))
+    .addColumn('preorder_duration', 'integer')
+    .addColumn('wholesale', 'jsonb')
+    .addColumn('variant_name', 'varchar')
     .addColumn('active', 'boolean', (col) => col.defaultTo(false))
+    .$call(withAudit)
+    .execute();
+
+  await db.schema
+    .createTable('product_variant')
+    .addColumn('variant_id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
+    .addColumn('product_id', 'uuid', (col) =>
+      col.notNull().references('master_product.product_id').onDelete('cascade'),
+    )
+    .addColumn('sku', 'varchar')
+    .addColumn('weight', 'integer', (col) => col.notNull())
+    .addColumn('name', 'varchar')
+    .addColumn('stock', 'integer', (col) => col.notNull())
+    .addColumn('images', sql`varchar[]`)
+    .$call(withAudit)
+    .execute();
+
+  await db.schema
+    .createTable('tokopedia_product_config')
+    .addColumn('product_id', 'uuid', (col) =>
+      col
+        .primaryKey()
+        .references('master_product.product_id')
+        .onDelete('cascade'),
+    )
+    .addColumn('category_id', 'integer', (col) => col.notNull())
+    .$call(withAudit)
+    .execute();
+
+  await db.schema
+    .createTable('tokopedia_product')
+    .addColumn('ext_product_id', 'varchar', (col) => col.primaryKey())
+    .addColumn('product_id', 'uuid', (col) =>
+      col.notNull().references('master_product.product_id').onDelete('cascade'),
+    )
     .$call(withAudit)
     .execute();
 }
