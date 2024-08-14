@@ -1,7 +1,24 @@
 import { Kysely, sql } from 'kysely';
 import { withAudit } from '../model';
 
-export async function up(db: Kysely<unknown>): Promise<void> {
+export async function up(db: Kysely<any>): Promise<void> {
+  await db.schema
+    .createTable('product_condition')
+    .addColumn('id', 'varchar', (col) => col.primaryKey())
+    .execute();
+
+  await db
+    .insertInto('product_condition')
+    .values([
+      {
+        id: 'new',
+      },
+      {
+        id: 'old',
+      },
+    ])
+    .execute();
+
   await db.schema
     .createTable('user')
     .addColumn('user_id', 'uuid', (col) =>
@@ -49,11 +66,6 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
 
   await db.schema
-    .createType('product_condition')
-    .asEnum(['new', 'used'])
-    .execute();
-
-  await db.schema
     .createTable('master_product')
     .addColumn('product_id', 'uuid', (col) =>
       col.primaryKey().defaultTo(sql`gen_random_uuid()`),
@@ -75,11 +87,14 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('dimension_height', 'integer', (col) => col.notNull())
     .addColumn('dimension_length', 'integer', (col) => col.notNull())
     .addColumn('brand', 'varchar')
-    .addColumn('condition', sql`product_condition`, (col) => col.notNull())
+    .addColumn('condition', 'varchar', (col) =>
+      col.notNull().references('product_condition.id').onDelete('no action'),
+    )
     .addColumn('preorder', 'boolean', (col) => col.defaultTo(false))
     .addColumn('preorder_duration', 'integer')
-    .addColumn('wholesale', 'jsonb')
     .addColumn('variant_name', 'varchar')
+    .addColumn('wholesale', 'jsonb')
+    .addColumn('attribute', 'jsonb')
     .addColumn('active', 'boolean', (col) => col.defaultTo(false))
     .$call(withAudit)
     .execute();
@@ -123,6 +138,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
+  await db.schema.dropTable('tokopedia_product').execute();
+  await db.schema.dropTable('tokopedia_product_config').execute();
+  await db.schema.dropTable('product_variant').execute();
   await db.schema.dropTable('master_product').execute();
   await db.schema.dropTable('store').execute();
   await db.schema.dropTable('user_session').execute();
