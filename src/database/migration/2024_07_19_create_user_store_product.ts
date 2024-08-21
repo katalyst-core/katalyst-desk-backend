@@ -129,7 +129,7 @@ export async function up(db: Kysely<any>): Promise<void> {
 
   await db.schema
     .createTable('tokopedia_product')
-    .addColumn('ext_product_id', 'varchar', (col) => col.primaryKey())
+    .addColumn('ext_product_id', 'integer', (col) => col.primaryKey())
     .addColumn('product_id', 'uuid', (col) =>
       col.notNull().references('master_product.product_id').onDelete('cascade'),
     )
@@ -146,4 +146,5 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema.dropTable('user_session').execute();
   await db.schema.dropTable('basic_user_authentication').execute();
   await db.schema.dropTable('user').execute();
+  await db.schema.dropTable('product_condition').execute();
 }
