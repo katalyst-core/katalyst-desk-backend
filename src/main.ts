@@ -3,10 +3,10 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
-import { AllExceptionFilter } from './middleware/all-exception.filter';
-import { ResponseInterceptor } from './middleware/response.interceptor';
+import { AllExceptionFilter } from './common/filter/all-exception.filter';
+import { ResponseInterceptor } from './common/interceptor/response.interceptor';
 import { HttpException, HttpStatus, ValidationPipe } from '@nestjs/common';
-import { NoCacheInterceptor } from './middleware/no-cache.interceptor';
+import { NoCacheInterceptor } from './common/interceptor/no-cache.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

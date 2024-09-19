@@ -2,14 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './auth/auth.module';
 import { UtilModule } from './util/util.module';
-import { UserModule } from './user/user.module';
-import { StoreModule } from './store/store.module';
-import { ProductModule } from './product/product.module';
+import { ApiConfigModule } from './config/api-config.module';
 
 @Module({
   imports: [
@@ -28,13 +23,10 @@ import { ProductModule } from './product/product.module';
         connectionString: configService.get('DB_STRING'),
       }),
     }),
-    AuthModule,
+    ApiConfigModule,
     UtilModule,
-    UserModule,
-    StoreModule,
-    ProductModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

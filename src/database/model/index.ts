@@ -1,17 +1,16 @@
 import { UUID } from 'crypto';
 import { CreateTableBuilder, sql } from 'kysely';
 
-import { UserModel } from './UserModel';
-import { BasicUserAuthenticationModel } from './BasicUserAuthenticationModel';
-import { UserSessionModel } from './UserSessionModel';
-import { StoreModel } from './StoreModel';
-import { MasterProductModel } from './MasterProductModel';
+import { Agent } from './Agent';
+import { AgentAuth } from './AgentAuth';
+import { AgentSession } from './AgentSession';
+import { AuthType } from './AuthType';
 
 export interface AuditFields {
-  created_at: Date;
-  updated_at: Date;
-  created_by: UUID;
-  updated_by: UUID;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: UUID;
+  updatedBy: UUID;
 }
 
 export function withAudit(
@@ -28,10 +27,4 @@ export function withAudit(
     .addColumn('updated_by', 'uuid');
 }
 
-export {
-  UserModel,
-  BasicUserAuthenticationModel,
-  UserSessionModel,
-  StoreModel,
-  MasterProductModel,
-};
+export { Agent, AgentAuth, AgentSession, AuthType };

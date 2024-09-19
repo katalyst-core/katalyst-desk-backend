@@ -1,18 +1,11 @@
 import { Kysely } from 'kysely';
-import {
-  BasicUserAuthenticationModel,
-  MasterProductModel,
-  StoreModel,
-  UserModel,
-  UserSessionModel,
-} from './model';
+import { Agent, AgentAuth, AgentSession, AuthType } from './model';
 
 interface Tables {
-  user: UserModel;
-  basicUserAuthentication: BasicUserAuthenticationModel;
-  userSession: UserSessionModel;
-  store: StoreModel;
-  masterProduct: MasterProductModel;
+  agent: Agent;
+  agentAuth: AgentAuth;
+  agentSession: AgentSession;
+  authType: AuthType;
 }
 
 export class Database extends Kysely<Tables> {}
