@@ -5,6 +5,7 @@ import * as Joi from 'joi';
 import { DatabaseModule } from './database/database.module';
 import { UtilModule } from './util/util.module';
 import { ApiConfigModule } from './config/api-config.module';
+import { AgentModule } from './module/agent/agent.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ApiConfigModule } from './config/api-config.module';
     }),
     ApiConfigModule,
     UtilModule,
+    AgentModule,
   ],
   controllers: [],
   providers: [],

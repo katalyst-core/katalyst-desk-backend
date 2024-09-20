@@ -2,8 +2,8 @@ import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class NewAgentDTO {
   @IsString()
-  @MinLength(1)
-  @MinLength(128)
+  @MinLength(2)
+  @MaxLength(128)
   name: string;
 
   @IsEmail()

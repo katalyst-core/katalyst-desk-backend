@@ -46,7 +46,9 @@ export async function up(db: Kysely<any>): Promise<void> {
 
   await db.schema
     .createTable('agent_session')
-    .addColumn('session_id', 'uuid', (col) => col.primaryKey())
+    .addColumn('session_id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('agent_id', 'uuid', (col) =>
       col.references('agent.agent_id').notNull(),
     )

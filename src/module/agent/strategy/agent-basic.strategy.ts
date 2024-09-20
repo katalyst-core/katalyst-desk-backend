@@ -12,7 +12,10 @@ import { AgentBasicAuth } from '../agent.type';
 import { Observable } from 'rxjs';
 
 @Injectable()
-export class BasicStrategy extends PassportStrategy(Strategy, 'agent-basic') {
+export class AgentBasicStrategy extends PassportStrategy(
+  Strategy,
+  'agent-basic',
+) {
   constructor(private readonly db: Database) {
     super({
       username: 'username',
@@ -27,7 +30,6 @@ export class BasicStrategy extends PassportStrategy(Strategy, 'agent-basic') {
       .select(['agent.agentId', 'agentAuth.authValue'])
       .where('agentAuth.authType', 'like', 'basic')
       .where('agent.email', 'like', email)
-      .where('agentAuth.authValue', '=', password)
       .executeTakeFirst();
 
     const exception = new UnauthorizedException({
@@ -52,7 +54,7 @@ export class BasicStrategy extends PassportStrategy(Strategy, 'agent-basic') {
   }
 }
 
-export class BasicGuard extends AuthGuard('agent-basic') {
+export class AgentBasicGuard extends AuthGuard('agent-basic') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
@@ -61,15 +63,15 @@ export class BasicGuard extends AuthGuard('agent-basic') {
 
   handleRequest<TUser = any>(
     err: any,
-    agent: any,
+    user: any,
     info: any,
     context: ExecutionContext,
     status?: any,
   ): TUser {
-    if (err || !agent) throw err || new UnauthorizedException();
+    if (err || !user) throw err || new UnauthorizedException();
 
     void info, context, status;
 
-    return agent;
+    return user;
   }
 }

@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
+import { Observable } from 'rxjs';
 
 import { ApiConfigService } from 'src/config/api-config.service';
 import { Database } from 'src/database/database';
@@ -48,5 +53,27 @@ export class AgentJWTRefreshStrategy extends PassportStrategy(
       agentId,
       sessionId,
     } satisfies AgentRefresh;
+  }
+}
+
+export class AgentJWTRefresh extends AuthGuard('agent-jwt-refresh') {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    return super.canActivate(context);
+  }
+
+  handleRequest<TUser = any>(
+    err: any,
+    user: any,
+    info: any,
+    context: ExecutionContext,
+    status?: any,
+  ): TUser {
+    if (err || !user) throw err || new UnauthorizedException();
+
+    void info, context, status;
+
+    return user;
   }
 }

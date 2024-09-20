@@ -50,15 +50,15 @@ export class AgentJWTAccess extends AuthGuard('agent-jwt-access') {
 
   handleRequest<TUser = any>(
     err: any,
-    agent: any,
+    user: any,
     info: any,
     context: ExecutionContext,
     status?: any,
   ): TUser {
-    if (err || !agent) throw err || new UnauthorizedException();
+    if (err || !user) throw err || new UnauthorizedException();
 
     void info, context, status;
 
-    return agent;
+    return user;
   }
 }

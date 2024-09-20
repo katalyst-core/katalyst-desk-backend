@@ -1,16 +1,26 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
+
+import { AgentJWTAccess } from './strategy/agent-jwt-access.strategy';
+import { AgentAccess } from './agent.type';
+import { AgentService } from './agent.service';
 
 @Controller('agent')
 export class AgentController {
-  @Post('create')
-  async create() {}
+  constructor(private readonly agentService: AgentService) {}
 
-  @Post('login')
-  async login() {}
+  @UseGuards(AgentJWTAccess)
+  @Get('info')
+  async getAgentInfo(@Req() req: Request) {
+    const user = req.user as AgentAccess;
+    const { agentId } = user;
 
-  @Post('refresh')
-  async refresh() {}
+    const data = this.agentService.getAgentInfo(agentId);
 
-  @Post('logout')
-  async logout() {}
+    return {
+      code: 200,
+      message: 'Succcesfully retrieved agent info',
+      data,
+    };
+  }
 }
