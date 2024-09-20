@@ -4,8 +4,9 @@ import { withAudit } from '../model';
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('auth_type')
-    .addColumn('type_id', 'varchar', (col) => col.primaryKey())
+    .addColumn('type_id', 'varchar', (col) => col.notNull())
     .addColumn('auth_name', 'varchar', (col) => col.notNull())
+    .addPrimaryKeyConstraint('pk', ['type_id'])
     .execute();
 
   await db
@@ -21,37 +22,39 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('agent')
     .addColumn('agent_id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+      col.notNull().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('name', 'varchar', (col) => col.notNull())
     .addColumn('email', 'varchar', (col) => col.notNull())
     .addColumn('is_email_verified', 'boolean', (col) =>
       col.defaultTo(false).notNull(),
     )
+    .addPrimaryKeyConstraint('pk', ['agent_id'])
     .$call(withAudit)
     .execute();
 
   await db.schema
     .createTable('agent_auth')
-    .addColumn('agent_id', 'uuid', (col) =>
-      col.references('agent.agent_id').notNull(),
-    )
-    .addColumn('auth_type', 'varchar', (col) =>
-      col.references('auth_type.type_id').notNull(),
-    )
+    .addColumn('agent_id', 'uuid', (col) => col.notNull())
+    .addColumn('auth_type', 'varchar', (col) => col.notNull())
     .addColumn('auth_value', 'varchar', (col) => col.notNull())
-    .addPrimaryKeyConstraint('primary_key', ['agent_id', 'auth_type'])
+    .addPrimaryKeyConstraint('pk', ['agent_id', 'auth_type'])
+    .addForeignKeyConstraint('fk_agent_id', ['agent_id'], 'agent', ['agent_id'])
+    .addForeignKeyConstraint('fk_auth_type', ['auth_type'], 'auth_type', [
+      'type_id',
+    ])
     .$call(withAudit)
     .execute();
 
   await db.schema
     .createTable('agent_session')
     .addColumn('session_id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+      col.notNull().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('agent_id', 'uuid', (col) =>
       col.references('agent.agent_id').notNull(),
     )
+    .addPrimaryKeyConstraint('pk', ['session_id'])
     .$call(withAudit)
     .execute();
 }
