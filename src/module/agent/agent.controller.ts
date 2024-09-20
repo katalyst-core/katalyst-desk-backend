@@ -19,7 +19,7 @@ export class AgentController {
 
     return {
       code: 200,
-      message: 'Succcesfully retrieved agent info',
+      message: 'Successfully retrieved agent info',
       data,
     };
   }

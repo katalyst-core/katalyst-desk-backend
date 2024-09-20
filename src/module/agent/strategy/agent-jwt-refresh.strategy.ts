@@ -34,15 +34,15 @@ export class AgentJWTRefreshStrategy extends PassportStrategy(
   }
 
   async validate(_request: Request, payload: AgentRefreshJWT) {
-    const { sub: shortAgentId, session_id: shortSessionId } = payload;
+    const { sub: shortAgentId, session_token: shortSessionId } = payload;
 
     const agentId = this.util.restoreUUID(shortAgentId);
-    const sessionId = this.util.restoreUUID(shortSessionId);
+    const sessionToken = this.util.restoreUUID(shortSessionId);
 
     const agent = await this.db
       .selectFrom('agentSession')
       .where('agentSession.agentId', '=', agentId)
-      .where('agentSession.sessionId', '=', sessionId)
+      .where('agentSession.sessionToken', '=', sessionToken)
       .executeTakeFirst();
 
     if (!agent) {
@@ -51,7 +51,7 @@ export class AgentJWTRefreshStrategy extends PassportStrategy(
 
     return {
       agentId,
-      sessionId,
+      sessionToken,
     } satisfies AgentRefresh;
   }
 }

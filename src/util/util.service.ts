@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { SelectQueryBuilder, Simplify, sql } from 'kysely';
 import { customAlphabet } from 'nanoid';
+import { v7 as uuidv7 } from 'uuid';
 import * as short from 'short-uuid';
 
 import { Database } from 'src/database/database';
@@ -20,6 +21,10 @@ export class UtilService {
 
   generatePublicId(): string {
     return this.generateToken(16);
+  }
+
+  generateUUID(): UUID {
+    return uuidv7();
   }
 
   shortenUUID(value: UUID): string {

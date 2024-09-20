@@ -9,6 +9,7 @@ import { UtilService } from 'src/util/util.service';
 import { NewAgentDTO } from '../dto/new-agent-dto';
 import { UUID } from 'crypto';
 import { AgentAccessJWT, AgentRefreshJWT } from '../agent.type';
+import { executionAsyncResource } from 'async_hooks';
 
 @Injectable()
 export class AgentAuthService {
@@ -85,7 +86,7 @@ export class AgentAuthService {
     };
   }
 
-  async createRefreshToken(agentId: UUID, oldSessionId?: UUID) {
+  async createRefreshToken(agentId: UUID, oldSessionToken?: UUID) {
     const agent = await this.db
       .selectFrom('agent')
       .select('agent.agentId')
@@ -99,31 +100,35 @@ export class AgentAuthService {
       });
     }
 
-    try {
-      const session = await this.db.transaction().execute(async (tx) => {
-        if (oldSessionId) {
-          await tx
-            .deleteFrom('agentSession')
-            .where('agentSession.sessionId', '=', oldSessionId)
-            .execute();
-        }
+    const newSessionToken = this.util.generateUUID();
 
-        return await tx
+    try {
+      if (oldSessionToken) {
+        await this.db
+          .updateTable('agentSession')
+          .set({
+            sessionToken: newSessionToken,
+          })
+          .where('agentSession.sessionToken', '=', oldSessionToken)
+          .execute();
+      } else {
+        await this.db
           .insertInto('agentSession')
           .values({
             agentId,
+            sessionToken: newSessionToken,
             createdBy: agentId,
           })
-          .returning('agentSession.sessionId')
+          .returning('agentSession.sessionToken')
           .executeTakeFirst();
-      });
+      }
 
       const shortAgentId = this.util.shortenUUID(agentId);
-      const shortSessionId = this.util.shortenUUID(session.sessionId);
+      const shortSessionToken = this.util.shortenUUID(newSessionToken);
 
       const payload = {
         sub: shortAgentId,
-        session_id: shortSessionId,
+        session_token: shortSessionToken,
       } satisfies AgentRefreshJWT;
 
       const tokenSecret = this.config.getJWTRefreshSecret;
@@ -144,7 +149,7 @@ export class AgentAuthService {
       };
     } catch (err) {
       throw new BadRequestException({
-        message: 'Unable to create session token',
+        message: 'Unable to create session',
         code: 'CANNOT_CREATE_SESSION_TOKEN',
       });
     }

@@ -6,7 +6,7 @@ export interface AgentAccessJWT {
 
 export interface AgentRefreshJWT {
   sub: string;
-  session_id: string;
+  session_token: string;
 }
 
 export interface AgentAccess {
@@ -15,7 +15,7 @@ export interface AgentAccess {
 
 export interface AgentRefresh {
   agentId: UUID;
-  sessionId: UUID;
+  sessionToken: UUID;
 }
 
 export interface AgentBasicAuth {

@@ -67,11 +67,11 @@ export class AgentAuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const user = req.user as AgentRefresh;
-    const { agentId, sessionId } = user;
+    const { agentId, sessionToken } = user;
 
     const tokens = await Promise.all([
       this.authService.createAccessToken(agentId),
-      this.authService.createRefreshToken(agentId, sessionId),
+      this.authService.createRefreshToken(agentId, sessionToken),
     ]);
 
     tokens.forEach((token) => {

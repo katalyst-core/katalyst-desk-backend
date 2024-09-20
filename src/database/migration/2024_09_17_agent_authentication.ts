@@ -6,7 +6,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable('auth_type')
     .addColumn('type_id', 'varchar', (col) => col.notNull())
     .addColumn('auth_name', 'varchar', (col) => col.notNull())
-    .addPrimaryKeyConstraint('pk', ['type_id'])
+    .addPrimaryKeyConstraint('pk_auth_type', ['type_id'])
     .execute();
 
   await db
@@ -29,7 +29,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('is_email_verified', 'boolean', (col) =>
       col.defaultTo(false).notNull(),
     )
-    .addPrimaryKeyConstraint('pk', ['agent_id'])
+    .addPrimaryKeyConstraint('pk_agent', ['agent_id'])
     .$call(withAudit)
     .execute();
 
@@ -38,11 +38,21 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('agent_id', 'uuid', (col) => col.notNull())
     .addColumn('auth_type', 'varchar', (col) => col.notNull())
     .addColumn('auth_value', 'varchar', (col) => col.notNull())
-    .addPrimaryKeyConstraint('pk', ['agent_id', 'auth_type'])
-    .addForeignKeyConstraint('fk_agent_id', ['agent_id'], 'agent', ['agent_id'])
-    .addForeignKeyConstraint('fk_auth_type', ['auth_type'], 'auth_type', [
-      'type_id',
-    ])
+    .addPrimaryKeyConstraint('pk_agent_auth', ['agent_id', 'auth_type'])
+    .addForeignKeyConstraint(
+      'fk_agent_id',
+      ['agent_id'],
+      'agent',
+      ['agent_id'],
+      (b) => b.onDelete('cascade'),
+    )
+    .addForeignKeyConstraint(
+      'fk_auth_type',
+      ['auth_type'],
+      'auth_type',
+      ['type_id'],
+      (b) => b.onDelete('cascade'),
+    )
     .$call(withAudit)
     .execute();
 
@@ -51,11 +61,23 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('session_id', 'uuid', (col) =>
       col.notNull().defaultTo(sql`gen_random_uuid()`),
     )
-    .addColumn('agent_id', 'uuid', (col) =>
-      col.references('agent.agent_id').notNull(),
+    .addColumn('agent_id', 'uuid', (col) => col.notNull())
+    .addColumn('session_token', 'uuid', (col) => col.unique().notNull())
+    .addPrimaryKeyConstraint('pk_agent_session', ['session_id'])
+    .addForeignKeyConstraint(
+      'fk_agent_id',
+      ['agent_id'],
+      'agent',
+      ['agent_id'],
+      (b) => b.onDelete('cascade'),
     )
-    .addPrimaryKeyConstraint('pk', ['session_id'])
     .$call(withAudit)
+    .execute();
+
+  await db.schema
+    .createIndex('agent_session_session_token_index')
+    .on('agent_session')
+    .columns(['session_token'])
     .execute();
 }
 
