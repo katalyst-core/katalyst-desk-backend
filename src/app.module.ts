@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { UtilModule } from './util/util.module';
 import { ApiConfigModule } from './config/api-config.module';
 import { AgentModule } from './module/agent/agent.module';
+import { OrganizationModule } from './module/organization/organization.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AgentModule } from './module/agent/agent.module';
     ApiConfigModule,
     UtilModule,
     AgentModule,
+    OrganizationModule,
   ],
   controllers: [],
   providers: [],

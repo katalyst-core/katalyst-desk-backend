@@ -9,7 +9,6 @@ import { UtilService } from 'src/util/util.service';
 import { NewAgentDTO } from '../dto/new-agent-dto';
 import { UUID } from 'crypto';
 import { AgentAccessJWT, AgentRefreshJWT } from '../agent.type';
-import { executionAsyncResource } from 'async_hooks';
 
 @Injectable()
 export class AgentAuthService {
@@ -148,6 +147,7 @@ export class AgentAuthService {
         },
       };
     } catch (err) {
+      console.log(err);
       throw new BadRequestException({
         message: 'Unable to create session',
         code: 'CANNOT_CREATE_SESSION_TOKEN',

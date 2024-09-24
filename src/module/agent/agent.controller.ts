@@ -15,7 +15,7 @@ export class AgentController {
     const user = req.user as AgentAccess;
     const { agentId } = user;
 
-    const data = this.agentService.getAgentInfo(agentId);
+    const data = await this.agentService.getAgentInfo(agentId);
 
     return {
       code: 200,

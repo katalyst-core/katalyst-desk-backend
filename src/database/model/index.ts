@@ -5,6 +5,8 @@ import { Agent } from './Agent';
 import { AgentAuth } from './AgentAuth';
 import { AgentSession } from './AgentSession';
 import { AuthType } from './AuthType';
+import { Organization } from './Organization';
+import { OrganizationAgent } from './OrganizationAgent';
 
 export interface AuditFields {
   createdAt: Date;
@@ -27,4 +29,11 @@ export function withAudit(
     .addColumn('updated_by', 'uuid');
 }
 
-export { Agent, AgentAuth, AgentSession, AuthType };
+export {
+  Agent,
+  AgentAuth,
+  AgentSession,
+  AuthType,
+  Organization,
+  OrganizationAgent,
+};
