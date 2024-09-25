@@ -47,6 +47,6 @@ export async function up(db: Kysely<any>): Promise<void> {
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
-  await db.schema.dropIndex('organization_agent').execute();
+  await db.schema.dropTable('organization_agent').execute();
   await db.schema.dropTable('organization').execute();
 }

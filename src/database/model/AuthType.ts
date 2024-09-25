@@ -1,4 +1,6 @@
+export type AuthTypeId = 'basic';
+
 export interface AuthType {
-  typeId: string;
+  typeId: AuthTypeId;
   authName: string;
 }

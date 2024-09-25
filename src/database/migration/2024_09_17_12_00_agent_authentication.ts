@@ -82,6 +82,7 @@ export async function up(db: Kysely<any>): Promise<void> {
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
+  await db.schema.dropIndex('agent_session_session_token_index').execute();
   await db.schema.dropTable('agent_session').execute();
   await db.schema.dropTable('agent_auth').execute();
   await db.schema.dropTable('agent').execute();
