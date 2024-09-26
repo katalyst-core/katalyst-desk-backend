@@ -7,6 +7,7 @@ import { UtilModule } from './util/util.module';
 import { ApiConfigModule } from './config/api-config.module';
 import { AgentModule } from './module/agent/agent.module';
 import { OrganizationModule } from './module/organization/organization.module';
+import { ChannelModule } from './module/channel/channel.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { OrganizationModule } from './module/organization/organization.module';
     UtilModule,
     AgentModule,
     OrganizationModule,
+    ChannelModule,
   ],
   controllers: [],
   providers: [],

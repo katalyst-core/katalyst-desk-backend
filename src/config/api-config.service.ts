@@ -16,4 +16,8 @@ export class ApiConfigService {
   get getJWTRefreshSecret(): string {
     return this.configService.get('JWT_REFRESH_SECRET', { infer: true });
   }
+
+  get getWhatsAppWebhookToken(): string {
+    return this.configService.get('WHATSAPP_WEBHOOK_TOKEN', { infer: true });
+  }
 }

@@ -4,8 +4,9 @@ import { MessageStatusId } from './MessageStatus';
 
 export interface TicketMessage {
   messageId: Generated<UUID>;
+  messageCode: string;
   ticketId: UUID;
   messageStatus: MessageStatusId;
   isCustomer: boolean;
-  messageContent: string;
+  messageContent: JSON;
 }

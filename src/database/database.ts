@@ -6,7 +6,6 @@ import { AuthType } from './model/AuthType';
 import { TeamAgent } from './model/TeamAgent';
 import { AgentAuth } from './model/AgentAuth';
 import { ChannelType } from './model/ChannelType';
-import { ContactType } from './model/ContactType';
 import { AgentSession } from './model/AgentSession';
 import { TicketStatus } from './model/TicketStatus';
 import { Organization } from './model/Organization';
@@ -23,7 +22,6 @@ interface Tables {
   authType: AuthType;
   teamAgent: TeamAgent;
   agentAuth: AgentAuth;
-  contactType: ContactType;
   channelType: ChannelType;
   ticketStatus: TicketStatus;
   agentSession: AgentSession;
