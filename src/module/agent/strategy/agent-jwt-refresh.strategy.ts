@@ -36,8 +36,8 @@ export class AgentJWTRefreshStrategy extends PassportStrategy(
   async validate(_request: Request, payload: AgentRefreshJWT) {
     const { sub: shortAgentId, session_token: shortSessionId } = payload;
 
-    const agentId = this.util.restoreUUID(shortAgentId);
-    const sessionToken = this.util.restoreUUID(shortSessionId);
+    const agentId = UtilService.restoreUUID(shortAgentId);
+    const sessionToken = UtilService.restoreUUID(shortSessionId);
 
     const agent = await this.db
       .selectFrom('agentSession')

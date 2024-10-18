@@ -61,7 +61,7 @@ export class AgentAuthService {
   }
 
   async createAccessToken(agentId: UUID) {
-    const shortAgentId = this.util.shortenUUID(agentId);
+    const shortAgentId = UtilService.shortenUUID(agentId);
 
     const payload = {
       sub: shortAgentId,
@@ -122,8 +122,8 @@ export class AgentAuthService {
           .executeTakeFirst();
       }
 
-      const shortAgentId = this.util.shortenUUID(agentId);
-      const shortSessionToken = this.util.shortenUUID(newSessionToken);
+      const shortAgentId = UtilService.shortenUUID(agentId);
+      const shortSessionToken = UtilService.shortenUUID(newSessionToken);
 
       const payload = {
         sub: shortAgentId,

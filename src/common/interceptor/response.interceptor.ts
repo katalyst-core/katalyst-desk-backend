@@ -1,5 +1,6 @@
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
+import { instanceToPlain } from 'class-transformer';
 import { map, Observable } from 'rxjs';
 
 export interface Response {
@@ -18,15 +19,31 @@ export class ResponseInterceptor implements NestInterceptor {
       map((data) => {
         if (!data) return;
 
-        if (data.status) {
+        const { status, message, data: content, options } = data;
+
+        const { dto } = options || {};
+
+        if (status) {
           context.switchToHttp().getResponse().status(data.status);
         }
 
+        let formattedContent;
+
+        // Serialize content with DTO if it exists
+        if (dto) {
+          const serialize = (c: unknown) => instanceToPlain(new dto(c));
+
+          formattedContent = Array.isArray(content)
+            ? content.map(serialize)
+            : serialize(content);
+        } else {
+          formattedContent = content || null; // Fallback to null if content is falsy
+        }
+
         return {
-          status:
-            data.status || context.switchToHttp().getResponse().statusCode,
-          message: data.message,
-          data: data.data || null,
+          status: status || context.switchToHttp().getResponse().statusCode,
+          message: message,
+          data: formattedContent,
         };
       }),
     );

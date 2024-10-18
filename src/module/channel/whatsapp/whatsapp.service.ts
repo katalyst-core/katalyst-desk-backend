@@ -10,8 +10,8 @@ export class WhatsAppService {
     console.log('req:', JSON.stringify(req)); // Used for webhook debugging
 
     const content = req.entry[0].changes[0].value;
-    const contact = content.contacts[0];
-    const message = content.messages[0];
+    const contact = content?.contacts[0];
+    const message = content?.messages[0];
 
     const { phone_number_id: phoneNumberId } = content.metadata;
     const {

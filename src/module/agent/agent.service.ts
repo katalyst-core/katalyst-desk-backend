@@ -13,4 +13,17 @@ export class AgentService {
       .where('agent.agentId', '=', agentId)
       .executeTakeFirst();
   }
+
+  async getOrganizationsByAgentId(agentId: UUID) {
+    return await this.db
+      .selectFrom('organizationAgent')
+      .innerJoin(
+        'organization',
+        'organization.organizationId',
+        'organizationAgent.organizationId',
+      )
+      .select(['organizationAgent.organizationId', 'organization.name'])
+      .where('organizationAgent.agentId', '=', agentId)
+      .execute();
+  }
 }

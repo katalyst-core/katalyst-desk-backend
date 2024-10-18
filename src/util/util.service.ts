@@ -11,7 +11,7 @@ import { TableOptionsDTO } from './dto/table-options-dto';
 @Injectable()
 export class UtilService {
   private readonly defaultString = '0123456789abcdefghijklmnopqrstuvwxyz';
-  private readonly translator = short();
+  private static readonly translator = short();
 
   constructor(private readonly db: Database) {}
 
@@ -27,7 +27,7 @@ export class UtilService {
     return uuidv7();
   }
 
-  shortenUUID(value: UUID): string {
+  static shortenUUID(value: UUID): string {
     try {
       return this.translator.fromUUID(value);
     } catch (_) {
@@ -38,7 +38,7 @@ export class UtilService {
     }
   }
 
-  restoreUUID(value: string): UUID {
+  static restoreUUID(value: string): UUID {
     try {
       return this.translator.toUUID(value) as UUID;
     } catch (_) {

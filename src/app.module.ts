@@ -8,6 +8,7 @@ import { ApiConfigModule } from './config/api-config.module';
 import { AgentModule } from './module/agent/agent.module';
 import { OrganizationModule } from './module/organization/organization.module';
 import { ChannelModule } from './module/channel/channel.module';
+import { TicketModule } from './module/ticket/ticket.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ChannelModule } from './module/channel/channel.module';
     AgentModule,
     OrganizationModule,
     ChannelModule,
+    TicketModule,
   ],
   controllers: [],
   providers: [],

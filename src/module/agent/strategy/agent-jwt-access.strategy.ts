@@ -33,7 +33,7 @@ export class AgentJWTAccessStrategy extends PassportStrategy(
 
   async validate(_request: Request, payload: AgentAccessJWT) {
     const { sub: shortAgentId } = payload;
-    const agentId = this.util.restoreUUID(shortAgentId);
+    const agentId = UtilService.restoreUUID(shortAgentId);
 
     return {
       agentId,
