@@ -63,29 +63,18 @@ export class OrganizationService {
       .selectFrom('ticket')
       .leftJoin('ticketCustomer', 'ticketCustomer.ticketId', 'ticket.ticketId')
       .leftJoin(
-        (eb) =>
-          eb
-            .selectFrom('ticketMessage')
-            .select([
-              'ticketMessage.ticketId',
-              'ticketMessage.isRead',
-              'ticketMessage.isCustomer',
-              'ticketMessage.createdAt',
-              'ticketMessage.messageContent',
-            ])
-            .orderBy('ticketMessage.createdAt', 'desc')
-            .limit(1)
-            .as('ticketMessage'),
-        (join) => join.onRef('ticketMessage.ticketId', '=', 'ticket.ticketId'),
+        'ticketMessage as latestMessage',
+        'latestMessage.ticketId',
+        'ticket.ticketId',
       )
       .select(({ selectFrom }) => [
         'ticket.ticketId',
         'ticket.ticketCode',
         'ticketCustomer.contactName',
-        'ticketMessage.isCustomer',
-        'ticketMessage.isRead',
-        'ticketMessage.createdAt',
-        'ticketMessage.messageContent',
+        'latestMessage.isCustomer',
+        'latestMessage.isRead',
+        'latestMessage.createdAt',
+        'latestMessage.messageContent',
         selectFrom('ticketMessage')
           .whereRef('ticketMessage.ticketId', '=', 'ticket.ticketId')
           .select(({ fn }) => [
@@ -95,6 +84,18 @@ export class OrganizationService {
           .as('unread'),
       ])
       .where('ticket.organizationId', '=', orgId)
+      .where(({ eb, selectFrom }) =>
+        eb(
+          'latestMessage.createdAt',
+          '=',
+          selectFrom('ticketMessage')
+            .select(['ticketMessage.createdAt'])
+            .orderBy('ticketMessage.createdAt', 'desc')
+            .limit(1)
+            .whereRef('ticketMessage.ticketId', '=', 'ticket.ticketId'),
+        ),
+      )
+      .orderBy('latestMessage.createdAt', 'desc')
       .execute();
 
     return ticket;

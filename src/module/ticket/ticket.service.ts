@@ -78,4 +78,6 @@ export class TicketService {
       .where('ticketMessage.ticketId', '=', ticketId)
       .execute();
   }
+
+  // TODO: Read messages in WhatsApp (if on whatsapp)
 }

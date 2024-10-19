@@ -12,10 +12,10 @@ export function withAudit(
   builder: CreateTableBuilder<any>,
 ): CreateTableBuilder<any> {
   return builder
-    .addColumn('created_at', 'timestamp', (col) =>
+    .addColumn('created_at', 'timestamptz', (col) =>
       col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull(),
     )
-    .addColumn('updated_at', 'timestamp', (col) =>
+    .addColumn('updated_at', 'timestamptz', (col) =>
       col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull(),
     )
     .addColumn('created_by', 'uuid')

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { WARequest } from './whatsapp.type';
 import { Database } from 'src/database/database';
+import { randomUUID } from 'crypto';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class WhatsAppService {
@@ -48,11 +50,13 @@ export class WhatsAppService {
           .where('ticket.ticketStatus', '!=', 'close')
           .executeTakeFirst();
 
+        const ticketCode = UtilService.shortenUUID(randomUUID());
+
         if (!ticket) {
           ticket = await tx
             .insertInto('ticket')
             .values({
-              ticketCode: '######',
+              ticketCode,
               organizationId: channel.organizationId,
               channelId: channel.channelId,
               ticketStatus: 'open',
