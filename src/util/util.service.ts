@@ -30,7 +30,9 @@ export class UtilService {
   static shortenUUID(value: UUID): string {
     try {
       return this.translator.fromUUID(value);
-    } catch (_) {
+    } catch (err) {
+      // console.log(err);
+      void err;
       throw new BadRequestException({
         message: 'Invalid request',
         code: 'INVALID_REQUEST',
@@ -41,7 +43,9 @@ export class UtilService {
   static restoreUUID(value: string): UUID {
     try {
       return this.translator.toUUID(value) as UUID;
-    } catch (_) {
+    } catch (err) {
+      // console.log(err);
+      void err;
       throw new BadRequestException({
         message: 'Invalid request',
         code: 'INVALID_REQUEST',
@@ -65,11 +69,12 @@ export class UtilService {
     // Obtain the table item count
     const totalItemQuery = await builder
       .clearSelect()
+      .clearOrderBy()
       .select(this.db.fn.countAll<number>().as('total'))
       .executeTakeFirst();
-    const totalItem = totalItemQuery.total;
-    const totalPage = Math.ceil(totalItem / limit);
-    const currentPage = Math.min(page, totalPage) || 1;
+    const totalItem = Number(totalItemQuery.total);
+    const totalPage: number = Math.ceil(totalItem / limit);
+    const currentPage: number = Math.min(page, totalPage) || 1;
 
     // Handle sorting
     if (sort) {
@@ -99,7 +104,7 @@ export class UtilService {
     const tableData = transform ? result.map(transform) : result;
 
     const data = {
-      table: tableData,
+      result: tableData,
       pagination: {
         current_page: currentPage,
         per_page: limit,

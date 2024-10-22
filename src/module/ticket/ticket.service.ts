@@ -1,12 +1,21 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { Database } from 'src/database/database';
+import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly util: UtilService,
+  ) {}
 
-  async getMessagesByTicketId(ticketId: UUID, userId: UUID) {
+  async getMessagesByTicketId(
+    ticketId: UUID,
+    userId: UUID,
+    tableOptions: TableOptionsDTO,
+  ) {
     const ticket = await this.db
       .selectFrom('ticket')
       .innerJoin(
@@ -40,11 +49,11 @@ export class TicketService {
         'ticketMessage.createdAt',
       ])
       .where('ticketMessage.ticketId', '=', ticketId)
-      .orderBy('ticketMessage.createdAt', 'desc')
-      .limit(10)
-      .execute();
+      .orderBy('ticketMessage.createdAt', 'desc');
 
-    return messages;
+    const data = this.util.executeWithTableOptions(messages, tableOptions);
+
+    return data;
   }
 
   async readTicketMessages(ticketId: UUID, userId: UUID) {

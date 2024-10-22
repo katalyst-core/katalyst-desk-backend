@@ -4,7 +4,7 @@ import { UtilService } from 'src/util/util.service';
 
 export function ShortenUUID() {
   return Transform(({ value }) => {
-    if (!IsUUID(value)) {
+    if (!value || !IsUUID(value)) {
       return value;
     }
 

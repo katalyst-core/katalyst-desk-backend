@@ -32,10 +32,17 @@ export class ResponseInterceptor implements NestInterceptor {
         // Serialize content with DTO if it exists
         if (dto) {
           const serialize = (c: unknown) => instanceToPlain(new dto(c));
+          const remap = (c: any) =>
+            Array.isArray(c) ? c.map(serialize) : serialize(c);
 
-          formattedContent = Array.isArray(content)
-            ? content.map(serialize)
-            : serialize(content);
+          if (content?.hasOwnProperty('pagination')) {
+            formattedContent = {
+              result: remap(content.result),
+              pagination: content.pagination,
+            };
+          } else {
+            formattedContent = remap(content);
+          }
         } else {
           formattedContent = content || null; // Fallback to null if content is falsy
         }
