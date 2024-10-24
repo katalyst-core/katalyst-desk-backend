@@ -142,7 +142,7 @@ export class AuthService {
         options: {
           maxAge: tokenExpiry * 1000,
           sameSite: 'lax',
-          path: '/auth/refresh',
+          path: '/auth',
         } satisfies CookieOptions,
       };
     } catch (err) {
@@ -151,6 +151,32 @@ export class AuthService {
         message: 'Unable to create session',
         code: 'CANNOT_CREATE_SESSION_TOKEN',
       });
+    }
+  }
+
+  async deleteSessionByToken(refreshToken: string) {
+    try {
+      const jwtRefreshPrivateKey = this.config.getJWTRefreshPrivateKey;
+      const decodedToken = this.jwt.verify(refreshToken, {
+        publicKey: jwtRefreshPrivateKey,
+      });
+
+      if (!(decodedToken satisfies AgentRefreshJWT)) {
+        return;
+      }
+
+      const { sub: shortAgentId, session_token: shortSessionToken } =
+        decodedToken;
+      const agentId = UtilService.restoreUUID(shortAgentId);
+      const sessionToken = UtilService.restoreUUID(shortSessionToken);
+
+      await this.db
+        .deleteFrom('agentSession')
+        .where('agentSession.agentId', '=', agentId)
+        .where('agentSession.sessionToken', '=', sessionToken)
+        .execute();
+    } catch (err) {
+      void err;
     }
   }
 }

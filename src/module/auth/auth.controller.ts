@@ -93,15 +93,16 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
-    const cookieNames = ['katalyst-desk-refresh'];
-    cookieNames.forEach((name) => {
-      const value = '';
-      const options = {
-        maxAge: 0,
-      };
-      res.cookie(name, value, options);
-    });
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshCookieName = 'katalyst-desk-refresh';
+
+    const refreshToken = req.cookies[refreshCookieName];
+    await this.authService.deleteSessionByToken(refreshToken);
+
+    const options = {
+      maxAge: 0,
+    };
+    res.cookie(refreshCookieName, '', options);
 
     return {
       status: HttpStatus.CREATED,
