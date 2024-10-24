@@ -3,10 +3,14 @@ import { UUID } from 'crypto';
 
 import { Database } from 'src/database/database';
 import { NewOrganizationDTO } from './dto/new-organization-dto';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly util: UtilService,
+  ) {}
 
   async createOrganization(agentId: UUID, data: NewOrganizationDTO) {
     return this.db.transaction().execute(async (tx) => {
@@ -44,7 +48,7 @@ export class OrganizationService {
       .executeTakeFirst();
   }
 
-  async getTicketsByOrgId(orgId: UUID, agentId: UUID) {
+  async getTicketsByOrgId(orgId: UUID, agentId: UUID, ticketOptions) {
     const org = await this.db
       .selectFrom('organizationAgent')
       .select(['organizationAgent.organizationId'])
@@ -59,7 +63,7 @@ export class OrganizationService {
       });
     }
 
-    const ticket = await this.db
+    const tickets = this.db
       .selectFrom('ticket')
       .leftJoin('ticketCustomer', 'ticketCustomer.ticketId', 'ticket.ticketId')
       .leftJoin(
@@ -95,9 +99,13 @@ export class OrganizationService {
             .whereRef('ticketMessage.ticketId', '=', 'ticket.ticketId'),
         ),
       )
-      .orderBy('latestMessage.createdAt', 'desc')
-      .execute();
+      .orderBy('latestMessage.createdAt', 'desc');
 
-    return ticket;
+    const data = await this.util.executeWithTableOptions(
+      tickets,
+      ticketOptions,
+    );
+
+    return data;
   }
 }

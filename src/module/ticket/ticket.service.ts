@@ -51,7 +51,10 @@ export class TicketService {
       .where('ticketMessage.ticketId', '=', ticketId)
       .orderBy('ticketMessage.createdAt', 'desc');
 
-    const data = this.util.executeWithTableOptions(messages, tableOptions);
+    const data = await this.util.executeWithTableOptions(
+      messages,
+      tableOptions,
+    );
 
     return data;
   }

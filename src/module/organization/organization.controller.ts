@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -16,6 +17,7 @@ import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
 import { AgentAccess } from '../auth/auth.type';
 import { UtilService } from 'src/util/util.service';
 import { TicketsResponseDTO } from './dto/tickets-response';
+import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
@@ -69,13 +71,21 @@ export class OrganizationController {
   }
 
   @Get('/:id/tickets')
-  async getTickets(@Req() req: Request, @Param('id') orgShortId: string) {
+  async getTickets(
+    @Req() req: Request,
+    @Param('id') orgShortId: string,
+    @Query() tableOptions: TableOptionsDTO,
+  ) {
     const orgId = UtilService.restoreUUID(orgShortId);
 
     const user = req.user as AgentAccess;
     const { agentId } = user;
 
-    const tickets = await this.orgService.getTicketsByOrgId(orgId, agentId);
+    const tickets = await this.orgService.getTicketsByOrgId(
+      orgId,
+      agentId,
+      tableOptions,
+    );
 
     return {
       options: {
