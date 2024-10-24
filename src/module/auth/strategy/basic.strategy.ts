@@ -8,13 +8,13 @@ import { Strategy } from 'passport-local';
 import * as bcrypt from 'bcrypt';
 
 import { Database } from 'src/database/database';
-import { AgentBasicAuth } from '../agent.type';
+import { AgentBasicAuth } from '../auth.type';
 import { Observable } from 'rxjs';
 
 @Injectable()
-export class AgentBasicStrategy extends PassportStrategy(
+export class BasicStrategy extends PassportStrategy(
   Strategy,
-  'agent-basic',
+  'basic',
 ) {
   constructor(private readonly db: Database) {
     super({
@@ -54,7 +54,7 @@ export class AgentBasicStrategy extends PassportStrategy(
   }
 }
 
-export class AgentBasicGuard extends AuthGuard('agent-basic') {
+export class BasicGuard extends AuthGuard('basic') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {

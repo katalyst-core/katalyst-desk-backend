@@ -6,12 +6,13 @@ import * as bcrypt from 'bcrypt';
 import { ApiConfigService } from 'src/config/api-config.service';
 import { Database } from 'src/database/database';
 import { UtilService } from 'src/util/util.service';
-import { NewAgentDTO } from '../dto/new-agent-dto';
+import { NewAgentDTO } from './dto/new-agent-dto';
 import { UUID } from 'crypto';
-import { AgentAccessJWT, AgentRefreshJWT } from '../agent.type';
+import { AgentAccessJWT, AgentRefreshJWT } from './auth.type';
+import { CookieOptions } from 'express';
 
 @Injectable()
-export class AgentAuthService {
+export class AuthService {
   constructor(
     private readonly db: Database,
     private readonly util: UtilService,
@@ -60,29 +61,24 @@ export class AgentAuthService {
     });
   }
 
-  async createAccessToken(agentId: UUID) {
+  createAccessToken(agentId: UUID) {
     const shortAgentId = UtilService.shortenUUID(agentId);
 
     const payload = {
       sub: shortAgentId,
     } satisfies AgentAccessJWT;
 
-    const tokenSecret = this.config.getJWTAccessSecret;
-    const tokenExpiry = 60;
+    const tokenPrivateKey = this.config.getJWTAccessPrivateKey;
+    const tokenExpiry = this.config.getJWTAccessExpiry;
     const options = {
-      secret: tokenSecret,
+      algorithm: 'RS256',
+      privateKey: tokenPrivateKey,
       expiresIn: `${tokenExpiry}s`,
     } satisfies JwtSignOptions;
 
     const token = this.jwt.sign(payload, options);
 
-    return {
-      name: 'Authentication',
-      value: token,
-      options: {
-        maxAge: tokenExpiry * 1000,
-      },
-    };
+    return token;
   }
 
   async createRefreshToken(agentId: UUID, oldSessionToken?: UUID) {
@@ -130,21 +126,24 @@ export class AgentAuthService {
         session_token: shortSessionToken,
       } satisfies AgentRefreshJWT;
 
-      const tokenSecret = this.config.getJWTRefreshSecret;
-      const tokenExpiry = 604800; // 7 Days
+      const tokenPrivateKey = this.config.getJWTRefreshPrivateKey;
+      const tokenExpiry = this.config.getJWTRefreshExpiry; // 7 Days
       const options = {
-        secret: tokenSecret,
+        algorithm: 'RS256',
+        secret: tokenPrivateKey,
         expiresIn: `${tokenExpiry}s`,
       } satisfies JwtSignOptions;
 
       const token = this.jwt.sign(payload, options);
 
       return {
-        name: 'Refresh',
+        name: 'katalyst-desk-refresh',
         value: token,
         options: {
           maxAge: tokenExpiry * 1000,
-        },
+          sameSite: 'lax',
+          path: '/auth/refresh',
+        } satisfies CookieOptions,
       };
     } catch (err) {
       console.log(err);

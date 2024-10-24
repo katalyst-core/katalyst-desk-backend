@@ -10,13 +10,13 @@ import {
 import { Request } from 'express';
 
 import { TicketService } from './ticket.service';
-import { AgentJWTAccess } from '../agent/strategy/agent-jwt-access.strategy';
+import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
 import { UtilService } from 'src/util/util.service';
-import { AgentAccess } from '../agent/agent.type';
+import { AgentAccess } from '../auth/auth.type';
 import { MessagesResponseDTO } from './dto/messages-response';
 import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
 
-@UseGuards(AgentJWTAccess)
+@UseGuards(JWTAccess)
 @Controller('ticket')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}

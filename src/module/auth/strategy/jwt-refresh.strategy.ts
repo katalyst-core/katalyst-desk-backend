@@ -11,24 +11,23 @@ import { Observable } from 'rxjs';
 import { ApiConfigService } from 'src/config/api-config.service';
 import { Database } from 'src/database/database';
 import { UtilService } from 'src/util/util.service';
-import { AgentRefresh, AgentRefreshJWT } from '../agent.type';
+import { AgentRefresh, AgentRefreshJWT } from '../auth.type';
 
 @Injectable()
-export class AgentJWTRefreshStrategy extends PassportStrategy(
+export class JWTRefreshStrategy extends PassportStrategy(
   Strategy,
-  'agent-jwt-refresh',
+  'jwt-refresh',
 ) {
   constructor(
     config: ApiConfigService,
     private readonly db: Database,
-    private readonly util: UtilService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => req?.cookies?.Refresh,
+        (req: Request) => req?.cookies['katalyst-desk-refresh'],
       ]),
       ignoreExpiration: false,
-      secretOrKey: config.getJWTRefreshSecret,
+      secretOrKey: config.getJWTRefreshPrivateKey,
       passReqToCallback: true,
     });
   }
@@ -56,7 +55,7 @@ export class AgentJWTRefreshStrategy extends PassportStrategy(
   }
 }
 
-export class AgentJWTRefresh extends AuthGuard('agent-jwt-refresh') {
+export class JWTRefresh extends AuthGuard('jwt-refresh') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {

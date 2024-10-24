@@ -12,12 +12,12 @@ import {
 import { OrganizationService } from './organization.service';
 import { Request } from 'express';
 import { NewOrganizationDTO } from './dto/new-organization-dto';
-import { AgentJWTAccess } from '../agent/strategy/agent-jwt-access.strategy';
-import { AgentAccess } from '../agent/agent.type';
+import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
+import { AgentAccess } from '../auth/auth.type';
 import { UtilService } from 'src/util/util.service';
 import { TicketsResponseDTO } from './dto/tickets-response';
 
-@UseGuards(AgentJWTAccess)
+@UseGuards(JWTAccess)
 @Controller('organization')
 export class OrganizationController {
   constructor(

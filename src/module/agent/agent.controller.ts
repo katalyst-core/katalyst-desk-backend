@@ -1,12 +1,12 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 
-import { AgentJWTAccess } from './strategy/agent-jwt-access.strategy';
-import { AgentAccess } from './agent.type';
+import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
+import { AgentAccess } from '../auth/auth.type';
 import { AgentService } from './agent.service';
 import { UtilService } from 'src/util/util.service';
 
-@UseGuards(AgentJWTAccess)
+@UseGuards(JWTAccess)
 @Controller('agent')
 export class AgentController {
   constructor(

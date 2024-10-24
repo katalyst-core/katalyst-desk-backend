@@ -10,23 +10,18 @@ import { Observable } from 'rxjs';
 
 import { ApiConfigService } from 'src/config/api-config.service';
 import { UtilService } from 'src/util/util.service';
-import { AgentAccess, AgentAccessJWT } from '../agent.type';
+import { AgentAccess, AgentAccessJWT } from '../auth.type';
 
 @Injectable()
-export class AgentJWTAccessStrategy extends PassportStrategy(
+export class JWTAccessStrategy extends PassportStrategy(
   Strategy,
-  'agent-jwt-access',
+  'jwt-access',
 ) {
-  constructor(
-    config: ApiConfigService,
-    private readonly util: UtilService,
-  ) {
+  constructor(config: ApiConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => req?.cookies?.Authentication,
-      ]),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.getJWTAccessSecret,
+      secretOrKey: config.getJWTAccessPrivateKey,
       passReqToCallback: true,
     });
   }
@@ -41,7 +36,7 @@ export class AgentJWTAccessStrategy extends PassportStrategy(
   }
 }
 
-export class AgentJWTAccess extends AuthGuard('agent-jwt-access') {
+export class JWTAccess extends AuthGuard('jwt-access') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {

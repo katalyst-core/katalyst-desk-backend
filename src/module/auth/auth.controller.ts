@@ -10,15 +10,16 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
-import { AgentBasicAuth, AgentRefresh } from '../agent.type';
-import { NewAgentDTO } from '../dto/new-agent-dto';
-import { AgentAuthService } from './agent-auth.service';
-import { AgentBasicGuard } from '../strategy/agent-basic.strategy';
-import { AgentJWTRefresh } from '../strategy/agent-jwt-refresh.strategy';
+import { AgentBasicAuth, AgentRefresh } from './auth.type';
+import { NewAgentDTO } from './dto/new-agent-dto';
+import { AuthService } from './auth.service';
+import { BasicGuard } from './strategy/basic.strategy';
+import { JWTRefresh } from './strategy/jwt-refresh.strategy';
+import { AccessTokenResponseDTO } from './dto/access-token-response';
 
-@Controller('agent/auth')
-export class AgentAuthController {
-  constructor(private readonly authService: AgentAuthService) {}
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
 
   @Post('create')
   async create(@Body() data: NewAgentDTO) {
@@ -30,10 +31,10 @@ export class AgentAuthController {
     };
   }
 
-  @UseGuards(AgentBasicGuard)
+  @UseGuards(BasicGuard)
   @Post('login')
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const { Refresh } = req.cookies;
+    const Refresh = req.cookies['katalyst-desk-refresh'];
     if (Refresh) {
       throw new UnauthorizedException({
         message: 'User is already logged in',
@@ -44,23 +45,25 @@ export class AgentAuthController {
     const user = req.user as AgentBasicAuth;
     const { agentId } = user;
 
-    const tokens = await Promise.all([
-      this.authService.createAccessToken(agentId),
-      this.authService.createRefreshToken(agentId),
-    ]);
+    const { name, value, options } =
+      await this.authService.createRefreshToken(agentId);
+    res.cookie(name, value, options);
 
-    tokens.forEach((token) => {
-      const { name, value, options } = token;
-      res.cookie(name, value, options);
-    });
+    const accessToken = this.authService.createAccessToken(agentId);
 
     return {
       status: HttpStatus.CREATED,
       message: 'Successfully logged in',
+      data: {
+        accessToken,
+      },
+      options: {
+        dto: AccessTokenResponseDTO,
+      },
     };
   }
 
-  @UseGuards(AgentJWTRefresh)
+  @UseGuards(JWTRefresh)
   @Post('refresh')
   async refresh(
     @Req() req: Request,
@@ -69,25 +72,29 @@ export class AgentAuthController {
     const user = req.user as AgentRefresh;
     const { agentId, sessionToken } = user;
 
-    const tokens = await Promise.all([
-      this.authService.createAccessToken(agentId),
-      this.authService.createRefreshToken(agentId, sessionToken),
-    ]);
+    const { name, value, options } = await this.authService.createRefreshToken(
+      agentId,
+      sessionToken,
+    );
+    res.cookie(name, value, options);
 
-    tokens.forEach((token) => {
-      const { name, value, options } = token;
-      res.cookie(name, value, options);
-    });
+    const accessToken = this.authService.createAccessToken(agentId);
 
     return {
       status: HttpStatus.CREATED,
       message: 'Successfully refreshed tokens',
+      data: {
+        accessToken,
+      },
+      options: {
+        dto: AccessTokenResponseDTO,
+      },
     };
   }
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
-    const cookieNames = ['Authentication', 'Refresh'];
+    const cookieNames = ['katalyst-desk-refresh'];
     cookieNames.forEach((name) => {
       const value = '';
       const options = {

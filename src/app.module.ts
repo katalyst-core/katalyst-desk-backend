@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import * as Joi from 'joi';
 
 import { DatabaseModule } from './database/database.module';
 import { UtilModule } from './util/util.module';
@@ -9,17 +8,11 @@ import { AgentModule } from './module/agent/agent.module';
 import { OrganizationModule } from './module/organization/organization.module';
 import { ChannelModule } from './module/channel/channel.module';
 import { TicketModule } from './module/ticket/ticket.module';
+import { AuthModule } from './module/auth/auth.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validationSchema: Joi.object({
-        DB_STRING: Joi.string().required(),
-        JWT_ACCESS_SECRET: Joi.string().required(),
-        JWT_REFRESH_SECRET: Joi.string().required(),
-      }),
-    }),
     DatabaseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -30,11 +23,12 @@ import { TicketModule } from './module/ticket/ticket.module';
     ApiConfigModule,
     UtilModule,
     AgentModule,
+    AuthModule,
     OrganizationModule,
     ChannelModule,
     TicketModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
