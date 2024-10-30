@@ -16,7 +16,7 @@ export class WhatsAppService {
   ) {}
 
   async handleMessage(req: WARequest) {
-    console.log('req:', JSON.stringify(req)); // Used for webhook debugging
+    // console.log('req:', JSON.stringify(req)); // Used for webhook debugging
 
     const content = req.entry[0].changes[0].value;
     const contact = content?.contacts[0];

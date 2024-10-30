@@ -7,6 +7,7 @@ export interface TicketMessage extends AuditFields {
   messageId: Generated<UUID>;
   messageCode: string;
   ticketId: UUID;
+  agentId: UUID;
   messageStatus: MessageStatusId;
   isCustomer: boolean;
   messageContent: JSON;

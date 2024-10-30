@@ -12,6 +12,8 @@ export class WhatsAppController {
 
   @All('webhook')
   verifyWebhook(@Req() req: Request, @Res() res: Response) {
+    console.log('req:', JSON.stringify(req.body));
+
     const webhookToken = this.config.getWhatsAppWebhookToken;
 
     const mode = req.query['hub.mode'];
