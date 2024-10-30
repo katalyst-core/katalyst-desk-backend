@@ -8,7 +8,7 @@ import { Database } from 'src/database/database';
 import { UtilService } from 'src/util/util.service';
 import { NewAgentDTO } from './dto/new-agent-dto';
 import { UUID } from 'crypto';
-import { AgentAccessJWT, AgentRefreshJWT } from './auth.type';
+import { AgentAccessJWT, AgentGatewayJWT, AgentRefreshJWT } from './auth.type';
 import { CookieOptions } from 'express';
 
 @Injectable()
@@ -178,5 +178,26 @@ export class AuthService {
     } catch (err) {
       void err;
     }
+  }
+
+  createGatewayToken(agentId: UUID, ip: string) {
+    const shortAgentId = UtilService.shortenUUID(agentId);
+
+    const payload = {
+      sub: shortAgentId,
+      ip_address: ip,
+    } satisfies AgentGatewayJWT;
+
+    const tokenPrivateKey = this.config.getJWTGatewayPrivateKey;
+    const tokenExpiry = this.config.getJWTGatewayExpiry;
+    const options = {
+      algorithm: 'RS256',
+      privateKey: tokenPrivateKey,
+      expiresIn: `${tokenExpiry}s`,
+    } satisfies JwtSignOptions;
+
+    const token = this.jwt.sign(payload, options);
+
+    return token;
   }
 }

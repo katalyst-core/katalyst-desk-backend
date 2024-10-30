@@ -7,6 +7,9 @@ import * as short from 'short-uuid';
 
 import { Database } from 'src/database/database';
 import { TableOptionsDTO } from './dto/table-options-dto';
+import { instanceToPlain } from 'class-transformer';
+import { ResponseDTO } from 'src/common/dto/response-dto';
+import { PaginatedResponseDTO } from 'src/common/dto/paginated-dto';
 
 @Injectable()
 export class UtilService {
@@ -50,6 +53,27 @@ export class UtilService {
         message: 'Invalid request',
         code: 'INVALID_REQUEST',
       });
+    }
+  }
+
+  static TransformDTO<T extends ResponseDTO = any>(
+    data: any,
+    dto: { new (...args: any[]): T },
+  ) {
+    const serialize = (c: T) => instanceToPlain(new dto(c));
+
+    const remap = (c: T | T[]) =>
+      Array.isArray(c) ? c.map(serialize) : serialize(c);
+
+    if (data.hasOwnProperty('pagination')) {
+      const { result, pagination } = data as PaginatedResponseDTO;
+
+      return {
+        result: result.map(serialize),
+        pagination,
+      } satisfies PaginatedResponseDTO;
+    } else {
+      return remap(data);
     }
   }
 

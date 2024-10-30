@@ -11,3 +11,9 @@ export function ShortenUUID() {
     return UtilService.shortenUUID(value);
   });
 }
+
+export function RestoreUUID() {
+  return Transform(({ value }) => {
+    return UtilService.restoreUUID(value);
+  });
+}

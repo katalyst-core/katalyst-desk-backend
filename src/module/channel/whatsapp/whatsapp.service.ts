@@ -3,10 +3,17 @@ import { WARequest } from './whatsapp.type';
 import { Database } from 'src/database/database';
 import { randomUUID } from 'crypto';
 import { UtilService } from 'src/util/util.service';
+import { ChannelGateway } from '../channel.gateway';
+import { WsMessageResponseDTO } from '../dto/ws-message-response';
+import { ChannelService } from '../channel.service';
 
 @Injectable()
 export class WhatsAppService {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly channelService: ChannelService,
+    private readonly gateway: ChannelGateway,
+  ) {}
 
   async handleMessage(req: WARequest) {
     console.log('req:', JSON.stringify(req)); // Used for webhook debugging
@@ -19,7 +26,7 @@ export class WhatsAppService {
     const {
       profile: { name: accountName },
     } = contact;
-    const { from: accountNumber, id: messageId } = message;
+    const { from: accountNumber, id: messageCode } = message;
 
     try {
       await this.db.transaction().execute(async (tx) => {
@@ -74,17 +81,49 @@ export class WhatsAppService {
             .execute();
         }
 
-        await tx
+        const newMessage = await tx
           .insertInto('ticketMessage')
           .values({
             ticketId: ticket.ticketId,
-            messageCode: messageId,
+            messageCode: messageCode,
             messageStatus: 'received',
             isCustomer: true,
             messageContent: message,
           })
           .onConflict((b) => b.doNothing())
+          .returning(['ticketMessage.messageId', 'ticketMessage.createdAt'])
+          .executeTakeFirst();
+
+        // Rough concept, maybe I should broadcast to organization
+        const agents = await tx
+          .selectFrom('organizationAgent')
+          .select('organizationAgent.agentId')
+          .where(
+            'organizationAgent.organizationId',
+            '=',
+            channel.organizationId,
+          )
           .execute();
+
+        const channelMessage = this.channelService.transformRaw(message);
+
+        const wsMessage = {
+          ...ticket,
+          ...newMessage,
+          messageContent: channelMessage,
+          isCustomer: true,
+          isRead: false,
+        } satisfies WsMessageResponseDTO;
+
+        // This sends to the whole organization
+        agents.forEach(({ agentId }) =>
+          this.gateway.sendAgent(
+            agentId,
+            'ticket-message',
+            wsMessage,
+            WsMessageResponseDTO,
+          ),
+        );
       });
     } catch (err) {
       console.log(err);

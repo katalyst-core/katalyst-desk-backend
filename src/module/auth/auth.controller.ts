@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Get,
   HttpStatus,
+  Ip,
   Post,
   Req,
   Res,
@@ -16,6 +18,8 @@ import { AuthService } from './auth.service';
 import { BasicGuard } from './strategy/basic.strategy';
 import { JWTRefresh } from './strategy/jwt-refresh.strategy';
 import { AccessTokenResponseDTO } from './dto/access-token-response';
+import { JWTAccess } from './strategy/jwt-access.strategy';
+import { GatewayTokenResponseDTO } from './dto/gateway-token-response';
 
 @Controller('auth')
 export class AuthController {
@@ -108,5 +112,31 @@ export class AuthController {
       status: HttpStatus.CREATED,
       message: 'Successfully logged out',
     };
+  }
+
+  @UseGuards(JWTAccess)
+  @Post('gateway')
+  async getGatewayToken(@Req() req: Request, @Ip() ip: any) {
+    const user = req.user as AgentRefresh;
+    const { agentId } = user;
+
+    const gatewayToken = this.authService.createGatewayToken(agentId, ip);
+
+    return {
+      status: HttpStatus.CREATED,
+      message: 'Successfully created gateway token',
+      data: {
+        gatewayToken,
+      },
+      options: {
+        dto: GatewayTokenResponseDTO,
+      },
+    };
+  }
+
+  @Get('test')
+  test(@Ip() ip: string) {
+    console.log(ip);
+    return {};
   }
 }

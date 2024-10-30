@@ -10,6 +10,7 @@ import { ChannelModule } from './module/channel/channel.module';
 import { TicketModule } from './module/ticket/ticket.module';
 import { AuthModule } from './module/auth/auth.module';
 import { AppController } from './app.controller';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -27,8 +28,8 @@ import { AppController } from './app.controller';
     OrganizationModule,
     ChannelModule,
     TicketModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
-  providers: [],
 })
 export class AppModule {}

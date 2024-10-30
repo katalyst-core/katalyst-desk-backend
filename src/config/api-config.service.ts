@@ -21,12 +21,20 @@ export class ApiConfigService {
     return this.configService.get('JWT_REFRESH_PRIVATE_KEY', { infer: true });
   }
 
+  get getJWTGatewayPrivateKey(): string {
+    return this.configService.get('JWT_GATEWAY_PRIVATE_KEY', { infer: true });
+  }
+
   get getJWTAccessExpiry(): number {
     return this.configService.get('JWT_ACCESS_EXPIRY', { infer: true });
   }
 
   get getJWTRefreshExpiry(): number {
     return this.configService.get('JWT_REFRESH_EXPIRY', { infer: true });
+  }
+
+  get getJWTGatewayExpiry(): number {
+    return this.configService.get('JWT_GATEWAY_EXPIRY', { infer: true });
   }
 
   get getWhatsAppWebhookToken(): string {

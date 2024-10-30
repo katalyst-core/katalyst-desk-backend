@@ -18,13 +18,14 @@ import { AgentAccess } from '../auth/auth.type';
 import { UtilService } from 'src/util/util.service';
 import { TicketsResponseDTO } from './dto/tickets-response';
 import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
+import { TicketService } from '../ticket/ticket.service';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
 export class OrganizationController {
   constructor(
     private readonly orgService: OrganizationService,
-    private readonly util: UtilService,
+    private readonly ticketService: TicketService,
   ) {}
 
   @Post('create')
@@ -81,7 +82,7 @@ export class OrganizationController {
     const user = req.user as AgentAccess;
     const { agentId } = user;
 
-    const tickets = await this.orgService.getTicketsByOrgId(
+    const tickets = await this.ticketService.getTicketsByOrgId(
       orgId,
       agentId,
       tableOptions,

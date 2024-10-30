@@ -9,6 +9,11 @@ export interface AgentRefreshJWT {
   session_token: string;
 }
 
+export interface AgentGatewayJWT {
+  sub: string;
+  ip_address: string;
+}
+
 export interface AgentAccess {
   agentId: UUID;
 }
