@@ -1,1 +1,1 @@
-export type WsTypes = 'ticket-message' | 'notif';
+export type WsTypes = 'notif' | 'ticket-message' | 'new-ticket';

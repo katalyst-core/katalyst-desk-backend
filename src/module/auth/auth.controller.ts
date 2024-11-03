@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 
 import { AgentBasicAuth, AgentRefresh } from './auth.type';
 import { NewAgentDTO } from './dto/new-agent-dto';
@@ -76,11 +76,11 @@ export class AuthController {
     const user = req.user as AgentRefresh;
     const { agentId, sessionToken } = user;
 
-    const { name, value, options } = await this.authService.createRefreshToken(
-      agentId,
-      sessionToken,
-    );
-    res.cookie(name, value, options);
+    // const { name, value, options } = await this.authService.createRefreshToken(
+    //   agentId,
+    //   sessionToken,
+    // );
+    // res.cookie(name, value, options);
 
     const accessToken = this.authService.createAccessToken(agentId);
 
@@ -105,7 +105,9 @@ export class AuthController {
 
     const options = {
       maxAge: 0,
-    };
+      sameSite: 'lax',
+      path: '/auth',
+    } satisfies CookieOptions;
     res.cookie(refreshCookieName, '', options);
 
     return {
@@ -132,11 +134,5 @@ export class AuthController {
         dto: GatewayTokenResponseDTO,
       },
     };
-  }
-
-  @Get('test')
-  test(@Ip() ip: string) {
-    console.log(ip);
-    return {};
   }
 }

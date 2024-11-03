@@ -30,7 +30,16 @@ export class TicketService {
 
     const ticketQuery = this.db
       .selectFrom('ticket')
-      .leftJoin('ticketCustomer', 'ticketCustomer.ticketId', 'ticket.ticketId')
+      .innerJoin(
+        'channelCustomer',
+        'channelCustomer.channelCustomerId',
+        'ticket.channelCustomerId',
+      )
+      .innerJoin(
+        'masterCustomer',
+        'masterCustomer.masterCustomerId',
+        'channelCustomer.masterCustomerId',
+      )
       .leftJoin(
         'ticketMessage as latestMessage',
         'latestMessage.ticketId',
@@ -39,7 +48,7 @@ export class TicketService {
       .select(({ selectFrom }) => [
         'ticket.ticketId',
         'ticket.ticketCode',
-        'ticketCustomer.contactName',
+        'masterCustomer.customerName',
         'latestMessage.isCustomer',
         'latestMessage.isRead',
         'latestMessage.createdAt',
@@ -83,6 +92,7 @@ export class TicketService {
     return tickets;
   }
 
+  // TODO: Move to messages folder
   async getMessagesByTicketId(
     ticketId: UUID,
     userId: UUID,

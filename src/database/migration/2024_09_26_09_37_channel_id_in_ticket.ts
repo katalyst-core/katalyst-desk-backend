@@ -8,12 +8,9 @@ export async function up(db: Kysely<any>) {
 
   await db.schema
     .alterTable('ticket')
-    .addForeignKeyConstraint(
-      'fk_channel_id',
-      ['channel_id'],
-      'organization_channel',
-      ['channel_id'],
-    )
+    .addForeignKeyConstraint('fk_channel_id', ['channel_id'], 'channel', [
+      'channel_id',
+    ])
     .onDelete('no action')
     .execute();
 }

@@ -25,7 +25,7 @@ import { CamelCasePlugin } from 'kysely';
 
         return new Database({
           dialect,
-          plugins: [new CamelCasePlugin()],
+          plugins: [new CamelCasePlugin({ maintainNestedObjectKeys: true })],
         });
       },
     },

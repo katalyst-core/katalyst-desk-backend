@@ -8,6 +8,7 @@ export interface Ticket {
   organizationId: UUID;
   teamId: UUID;
   agentId: UUID;
+  channelCustomerId: UUID;
   channelId: UUID;
   ticketStatus: TicketStatusId;
 }

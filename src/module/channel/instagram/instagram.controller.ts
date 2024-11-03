@@ -1,9 +1,22 @@
-import { All, Controller, Req, Res } from '@nestjs/common';
+import {
+  All,
+  Body,
+  Controller,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
+
 import { ApiConfigService } from 'src/config/api-config.service';
 import { InstagramService } from './instagram.service';
+import { InstagramCodeDTO } from './dto/instagram-code-dto';
+import { JWTAccess } from 'src/module/auth/strategy/jwt-access.strategy';
+import { AgentAccess } from 'src/module/auth/auth.type';
+import { InstagramWebhook } from './instagram.schema';
 
-@Controller('instagram')
+@Controller('channel/instagram')
 export class InstagramController {
   constructor(
     private readonly config: ApiConfigService,
@@ -11,7 +24,7 @@ export class InstagramController {
   ) {}
 
   @All('webhook')
-  verifyWebhook(@Req() req: Request, @Res() res: Response) {
+  async webhook(@Req() req: Request, @Res() res: Response) {
     console.log('req:', JSON.stringify(req.body));
 
     const webhookToken = this.config.getWhatsAppWebhookToken;
@@ -24,15 +37,35 @@ export class InstagramController {
       return res.send(challenge);
     }
 
-    // this.whatsAppService.handleMessage(req.body);
+    const content = req.body;
+
+    if (!content) {
+      return null;
+    }
+
+    const result = InstagramWebhook.safeParse(content);
+    if (!result.success) {
+      return null;
+    }
+
+    await this.instagramService.handleMessage(result.data);
 
     res.sendStatus(200);
   }
 
-  @All('auth')
-  auth(@Req() req: Request, @Res() res: Response) {
-    console.log(req.body, req.query);
+  @UseGuards(JWTAccess)
+  @Post('auth')
+  async auth(@Req() req: Request, @Body() data: InstagramCodeDTO) {
+    const user = req.user as AgentAccess;
+    const { agentId } = user;
 
-    res.sendStatus(200);
+    const { code, organization_id: organizationId } = data;
+
+    await this.instagramService.authUser(code, agentId, organizationId);
+
+    return {
+      code: 200,
+      message: 'Successfully authenticated Instagram',
+    };
   }
 }

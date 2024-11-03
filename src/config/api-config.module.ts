@@ -17,6 +17,13 @@ import * as Joi from 'joi';
         JWT_ACCESS_EXPIRY: Joi.number().required(),
         JWT_REFRESH_EXPIRY: Joi.number().required(),
         JWT_GATEWAY_EXPIRY: Joi.number().required(),
+
+        WHATSAPP_WEBHOOK_TOKEN: Joi.string().required(),
+
+        INSTAGRAM_WEBHOOK_TOKEN: Joi.string().required(),
+        INSTAGRAM_APP_ID: Joi.string().required(),
+        INSTAGRAM_APP_SECRET: Joi.string().required(),
+        INSTAGRAM_APP_REDIRECT_URL: Joi.string().required(),
       }),
     }),
   ],

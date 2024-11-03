@@ -1,9 +1,11 @@
-import { Expose } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import { UUID } from 'crypto';
+
 import { ShortenUUID } from 'src/common/decorator/class-transformer';
 import { ResponseDTO } from 'src/common/dto/response-dto';
 
-export class TicketsResponseDTO extends ResponseDTO {
+@Exclude()
+export class WsNewTicketDTO extends ResponseDTO {
   @ShortenUUID()
   @Expose({ name: 'ticket_id' })
   ticketId: UUID;
@@ -15,7 +17,7 @@ export class TicketsResponseDTO extends ResponseDTO {
   customerName: string;
 
   @Expose({ name: 'last_message' })
-  messageContent: string;
+  messageContent: any;
 
   @Expose({ name: 'last_message_timestamp' })
   createdAt: Date;

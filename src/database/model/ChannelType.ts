@@ -1,4 +1,4 @@
-export type ChannelTypeId = 'whatsapp' | 'line';
+export type ChannelTypeId = 'whatsapp' | 'line' | 'instagram';
 
 export interface ChannelType {
   typeId: ChannelTypeId;

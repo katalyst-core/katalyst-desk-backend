@@ -3,22 +3,22 @@ import { withAudit } from '../model';
 
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
-    .createTable('contact_type')
+    .createTable('channel_type')
     .addColumn('type_id', 'varchar', (col) => col.notNull())
-    .addColumn('contact_name', 'varchar', (col) => col.notNull())
-    .addPrimaryKeyConstraint('pk_contact_type', ['type_id'])
+    .addColumn('channel_name', 'varchar', (col) => col.notNull())
+    .addPrimaryKeyConstraint('pk_channel_type', ['type_id'])
     .execute();
 
   await db
-    .insertInto('contact_type')
+    .insertInto('channel_type')
     .values([
       {
         type_id: 'whatsapp',
-        contact_name: 'WhatsApp',
+        channel_name: 'WhatsApp',
       },
       {
         type_id: 'line',
-        contact_name: 'LINE',
+        channel_name: 'LINE',
       },
     ])
     .execute();
@@ -110,6 +110,42 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
+    .createTable('master_customer')
+    .addColumn('master_customer_id', 'uuid', (col) =>
+      col.notNull().defaultTo(sql`gen_random_uuid()`),
+    )
+    .addColumn('customer_name', 'varchar')
+    .addPrimaryKeyConstraint('pk_master_customer', ['master_customer_id'])
+    .$call(withAudit)
+    .execute();
+
+  await db.schema
+    .createTable('channel_customer')
+    .addColumn('channel_customer_id', 'uuid', (col) =>
+      col.notNull().defaultTo(sql`gen_random_uuid()`),
+    )
+    .addColumn('master_customer_id', 'uuid', (col) => col.notNull())
+    .addColumn('customer_account', 'varchar', (col) => col.notNull())
+    .addColumn('channel_type', 'varchar', (col) => col.notNull())
+    .addPrimaryKeyConstraint('pk_channel_customer', ['channel_customer_id'])
+    .addForeignKeyConstraint(
+      'fk_master_customer_id',
+      ['master_customer_id'],
+      'master_customer',
+      ['master_customer_id'],
+      (b) => b.onDelete('cascade'),
+    )
+    .addForeignKeyConstraint(
+      'fk_channel_type',
+      ['channel_type'],
+      'channel_type',
+      ['type_id'],
+      (b) => b.onDelete('no action'),
+    )
+    .$call(withAudit)
+    .execute();
+
+  await db.schema
     .createTable('ticket')
     .addColumn('ticket_id', 'uuid', (col) =>
       col.notNull().defaultTo(sql`gen_random_uuid()`),
@@ -118,7 +154,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('organization_id', 'uuid', (col) => col.notNull())
     .addColumn('team_id', 'uuid')
     .addColumn('agent_id', 'uuid')
-    .addColumn('contact_type', 'varchar', (col) => col.notNull())
+    .addColumn('channel_customer_id', 'uuid')
     .addColumn('ticket_status', 'varchar', (col) => col.notNull())
     .addPrimaryKeyConstraint('pk_ticket', ['ticket_id'])
     .addForeignKeyConstraint(
@@ -129,7 +165,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       (b) => b.onDelete('cascade'),
     )
     .addForeignKeyConstraint(
-      'fk_ticket_id',
+      'fk_team_id',
       ['team_id'],
       'team',
       ['team_id'],
@@ -143,41 +179,17 @@ export async function up(db: Kysely<any>): Promise<void> {
       (b) => b.onDelete('set null'),
     )
     .addForeignKeyConstraint(
-      'fk_contact_type',
-      ['contact_type'],
-      'contact_type',
-      ['type_id'],
-      (b) => b.onDelete('no action'),
+      'fk_channel_customer_id',
+      ['channel_customer_id'],
+      'channel_customer',
+      ['channel_customer_id'],
+      (b) => b.onDelete('set null'),
     )
     .addForeignKeyConstraint(
       'fk_ticket_status',
       ['ticket_status'],
       'ticket_status',
       ['status_id'],
-      (b) => b.onDelete('no action'),
-    )
-    .$call(withAudit)
-    .execute();
-
-  await db.schema
-    .createTable('ticket_customer')
-    .addColumn('ticket_id', 'uuid', (col) => col.notNull())
-    .addColumn('contact_type', 'varchar', (col) => col.notNull())
-    .addColumn('contact_value', 'varchar', (col) => col.notNull())
-    .addColumn('contact_name', 'varchar')
-    .addPrimaryKeyConstraint('pk_ticket_customer', ['ticket_id'])
-    .addForeignKeyConstraint(
-      'fk_ticket_id',
-      ['ticket_id'],
-      'ticket',
-      ['ticket_id'],
-      (b) => b.onDelete('cascade'),
-    )
-    .addForeignKeyConstraint(
-      'fk_contact_type',
-      ['contact_type'],
-      'contact_type',
-      ['type_id'],
       (b) => b.onDelete('no action'),
     )
     .$call(withAudit)
@@ -223,11 +235,12 @@ export async function up(db: Kysely<any>): Promise<void> {
 
 export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropTable('ticket_message').execute();
-  await db.schema.dropTable('ticket_customer').execute();
   await db.schema.dropTable('ticket').execute();
+  await db.schema.dropTable('channel_customer').execute();
+  await db.schema.dropTable('master_customer').execute();
   await db.schema.dropTable('team_agent').execute();
   await db.schema.dropTable('team').execute();
   await db.schema.dropTable('message_status').execute();
   await db.schema.dropTable('ticket_status').execute();
-  await db.schema.dropTable('contact_type').execute();
+  await db.schema.dropTable('channel_type').execute();
 }

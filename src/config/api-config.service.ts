@@ -40,4 +40,22 @@ export class ApiConfigService {
   get getWhatsAppWebhookToken(): string {
     return this.configService.get('WHATSAPP_WEBHOOK_TOKEN', { infer: true });
   }
+
+  get getInstagramWebhookToken(): string {
+    return this.configService.get('INSTAGRAM_WEBHOOK_TOKEN', { infer: true });
+  }
+
+  get getInstagramAppId(): string {
+    return this.configService.get('INSTAGRAM_APP_ID', { infer: true });
+  }
+
+  get getInstagramAppSecret(): string {
+    return this.configService.get('INSTAGRAM_APP_SECRET', { infer: true });
+  }
+
+  get getInstagramAppRedirectUrl(): string {
+    return this.configService.get('INSTAGRAM_APP_REDIRECT_URL', {
+      infer: true,
+    });
+  }
 }
