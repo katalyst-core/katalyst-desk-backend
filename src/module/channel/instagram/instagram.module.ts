@@ -4,10 +4,12 @@ import { InstagramController } from './instagram.controller';
 import { InstagramService } from './instagram.service';
 import { ChannelModule } from '../channel.module';
 import { HttpModule } from '@nestjs/axios';
+import { InstagramAPI } from './instagram.api';
 
 @Module({
   imports: [forwardRef(() => ChannelModule), HttpModule],
   controllers: [InstagramController],
-  providers: [InstagramService],
+  providers: [InstagramService, InstagramAPI],
+  exports: [InstagramAPI],
 })
 export class InstagramModule {}

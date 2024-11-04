@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -15,6 +16,7 @@ import { UtilService } from 'src/util/util.service';
 import { AgentAccess } from '../auth/auth.type';
 import { MessagesResponseDTO } from './dto/messages-response';
 import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
+import { SendMessageDTO } from './dto/send-message-dto';
 
 @UseGuards(JWTAccess)
 @Controller('ticket')
@@ -58,6 +60,26 @@ export class TicketController {
 
     return {
       message: 'Successfully read messages',
+    };
+  }
+
+  @Post('/:id/send-message')
+  async sendMessage(
+    @Req() req: Request,
+    @Param('id') ticketShortId: string,
+    @Body() data: SendMessageDTO,
+  ) {
+    const ticketId = UtilService.restoreUUID(ticketShortId);
+    const { text } = data;
+
+    const user = req.user as AgentAccess;
+    const { agentId } = user;
+
+    await this.ticketService.sendMessage(ticketId, agentId, text);
+
+    return {
+      code: 200,
+      message: 'Successfully sent message',
     };
   }
 }

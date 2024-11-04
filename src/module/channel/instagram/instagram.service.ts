@@ -1,23 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
 import { UUID } from 'crypto';
 
-import { ApiConfigService } from 'src/config/api-config.service';
 import { Database } from 'src/database/database';
 import { InstagramAuthConfig } from './instagram.type';
 import { InstagramWebhookType } from './instagram.schema';
 import { ChannelService } from '../channel.service';
-import { ChannelGateway } from '../channel.gateway';
+import { InstagramAPI } from './instagram.api';
 
 @Injectable()
 export class InstagramService {
   constructor(
-    private readonly http: HttpService,
-    private readonly config: ApiConfigService,
     private readonly db: Database,
     private readonly channelService: ChannelService,
-    private readonly gateway: ChannelGateway,
+    private readonly instagramAPI: InstagramAPI,
   ) {}
 
   async handleMessage(content: InstagramWebhookType) {
@@ -56,23 +51,8 @@ export class InstagramService {
       throw new BadRequestException('Invalid username or organization');
     }
 
-    const tokenForm = new FormData();
-    tokenForm.append('client_id', this.config.getInstagramAppId);
-    tokenForm.append('client_secret', this.config.getInstagramAppSecret);
-    tokenForm.append('redirect_uri', this.config.getInstagramAppRedirectUrl);
-    tokenForm.append('code', code);
-    tokenForm.append('grant_type', 'authorization_code');
-
     try {
-      const tokenResponse = await lastValueFrom(
-        this.http.post(
-          'https://api.instagram.com/oauth/access_token',
-          tokenForm,
-          {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          },
-        ),
-      );
+      const tokenResponse = await this.instagramAPI.getAccessToken(code);
 
       const { access_token: shortLivedAccessToken, user_id: channelUserId } =
         tokenResponse.data;
@@ -87,26 +67,14 @@ export class InstagramService {
         throw new BadRequestException('Account already registered');
       }
 
-      const longLivedResponse = await lastValueFrom(
-        this.http.get('https://graph.instagram.com/access_token', {
-          params: {
-            grant_type: 'ig_exchange_token',
-            client_secret: this.config.getInstagramAppSecret,
-            access_token: shortLivedAccessToken,
-          },
-        }),
+      const longLivedResponse = await this.instagramAPI.getLongLivedAccessToken(
+        shortLivedAccessToken,
       );
 
       const { access_token: longLivedAccessToken } = longLivedResponse.data;
 
-      const userInfoResponse = await lastValueFrom(
-        this.http.get('https://graph.instagram.com/v21.0/me', {
-          params: {
-            fields: 'id,user_id,username,profile_picture_url',
-            access_token: longLivedAccessToken,
-          },
-        }),
-      );
+      const userInfoResponse =
+        await this.instagramAPI.getUserInfo(longLivedAccessToken);
 
       const { permissions } = tokenResponse.data;
       const { access_token, expires_in } = longLivedResponse.data;
@@ -152,9 +120,5 @@ export class InstagramService {
       console.log(err);
       throw new BadRequestException('Failed to authenticate user');
     }
-
-    // console.log(tokenResponse);
-    // console.log(tokenResponse.status);
-    // console.log(tokenResponse.data);
   }
 }

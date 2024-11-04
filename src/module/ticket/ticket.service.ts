@@ -4,6 +4,7 @@ import { Database } from 'src/database/database';
 import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
 import { UtilService } from 'src/util/util.service';
 import { ChannelService } from '../channel/channel.service';
+import { InstagramAPI } from '../channel/instagram/instagram.api';
 
 @Injectable()
 export class TicketService {
@@ -11,6 +12,7 @@ export class TicketService {
     private readonly db: Database,
     private readonly util: UtilService,
     private readonly channelService: ChannelService,
+    private readonly instagramAPI: InstagramAPI,
   ) {}
 
   async getTicketsByOrgId(orgId: UUID, agentId: UUID, ticketOptions) {
@@ -183,4 +185,65 @@ export class TicketService {
   }
 
   // TODO: Read messages in WhatsApp (if on whatsapp)
+
+  async sendMessage(ticketId: UUID, agentId: UUID, text: string) {
+    const ticket = await this.db
+      .selectFrom('ticket')
+      .innerJoin(
+        'channelCustomer',
+        'channelCustomer.channelCustomerId',
+        'ticket.channelCustomerId',
+      )
+      .innerJoin('channel', 'channel.channelId', 'ticket.channelId')
+      .innerJoin(
+        'organization',
+        'organization.organizationId',
+        'ticket.organizationId',
+      )
+      .innerJoin(
+        'organizationAgent',
+        'organizationAgent.organizationId',
+        'organization.organizationId',
+      )
+      .select([
+        'channelCustomer.customerAccount',
+        'channel.channelAccount',
+        'channel.channelType',
+      ])
+      .where('ticket.ticketId', '=', ticketId)
+      .where('organizationAgent.agentId', '=', agentId)
+      .executeTakeFirst();
+
+    if (!ticket) {
+      throw new BadRequestException({
+        message: 'Insufficient Access',
+        code: 'Insufficient Access',
+      });
+    }
+
+    const { customerAccount, channelAccount, channelType } = ticket;
+
+    try {
+      if (channelType == 'instagram') {
+        await this.instagramAPI.sendMessage(
+          channelAccount,
+          customerAccount,
+          text,
+        );
+
+        return;
+      }
+    } catch (err) {
+      console.log(err);
+      throw new BadRequestException({
+        message: 'Unable to send message',
+        code: 'CANT_SEND_MESSAGE',
+      });
+    }
+
+    throw new BadRequestException({
+      message: 'Unknown platform',
+      code: 'UNKNOWN_PLATFORM',
+    });
+  }
 }
