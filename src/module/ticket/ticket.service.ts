@@ -15,6 +15,31 @@ export class TicketService {
     private readonly instagramAPI: InstagramAPI,
   ) {}
 
+  async hasAccessToTicket(ticketId: UUID, agentId: UUID) {
+    const ticket = await this.db
+      .selectFrom('ticket')
+      .innerJoin(
+        'organization',
+        'organization.organizationId',
+        'ticket.organizationId',
+      )
+      .innerJoin(
+        'organizationAgent',
+        'organizationAgent.organizationId',
+        'organization.organizationId',
+      )
+      .where('organizationAgent.agentId', '=', agentId)
+      .where('ticket.ticketId', '=', ticketId)
+      .executeTakeFirst();
+
+    if (!ticket) {
+      throw new BadRequestException({
+        message: 'Agent does not have access to this ticket',
+        code: 'AGENT_INVALID_ACCESS',
+      });
+    }
+  }
+
   async getTicketsByOrgId(orgId: UUID, agentId: UUID, ticketOptions) {
     const org = await this.db
       .selectFrom('organizationAgent')
@@ -152,7 +177,7 @@ export class TicketService {
     return messages;
   }
 
-  async readTicketMessages(ticketId: UUID, userId: UUID) {
+  async readTicketMessages(ticketId: UUID, agentId: UUID) {
     const ticket = await this.db
       .selectFrom('ticket')
       .innerJoin(
@@ -165,7 +190,7 @@ export class TicketService {
         'organizationAgent.organizationId',
         'organization.organizationId',
       )
-      .where('organizationAgent.agentId', '=', userId)
+      .where('organizationAgent.agentId', '=', agentId)
       .where('ticket.ticketId', '=', ticketId)
       .executeTakeFirst();
 
@@ -245,5 +270,45 @@ export class TicketService {
       message: 'Unknown platform',
       code: 'UNKNOWN_PLATFORM',
     });
+  }
+
+  async getTicketDetails(ticketId: UUID) {
+    const ticket = await this.db
+      .selectFrom('ticket')
+      .innerJoin(
+        'channelCustomer',
+        'channelCustomer.channelCustomerId',
+        'ticket.channelCustomerId',
+      )
+      .innerJoin(
+        'masterCustomer',
+        'masterCustomer.masterCustomerId',
+        'channelCustomer.masterCustomerId',
+      )
+      .select([
+        'ticket.ticketId',
+        'ticket.ticketCode',
+        'ticket.ticketStatus',
+        'masterCustomer.customerName',
+      ])
+      .where('ticket.ticketId', '=', ticketId)
+      .executeTakeFirst();
+
+    if (!ticket) {
+      throw new BadRequestException({
+        message: 'Unable to find ticket',
+        code: 'TICKET_NOT_FOUND',
+      });
+    }
+
+    return ticket;
+  }
+
+  async closeTicket(ticketId: UUID) {
+    await this.db
+      .updateTable('ticket')
+      .set({ ticketStatus: 'close' })
+      .where('ticket.ticketId', '=', ticketId)
+      .execute();
   }
 }

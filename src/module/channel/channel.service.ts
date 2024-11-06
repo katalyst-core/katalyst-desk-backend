@@ -225,7 +225,7 @@ export class ChannelService {
               ...masterCustomer,
               messageContent: channelMessage,
               isCustomer,
-              unread: 0,
+              unread: 1,
               isRead: false, // Change this to the actual is read
             } satisfies WsNewTicketDTO;
 

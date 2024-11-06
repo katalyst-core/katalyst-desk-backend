@@ -5,6 +5,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
@@ -25,7 +26,17 @@ export class InstagramController {
 
   @All('webhook')
   async webhook(@Req() req: Request, @Res() res: Response) {
-    console.log('req:', JSON.stringify(req.body));
+    const rawBody = JSON.stringify(req.body);
+    const signature = req.header('x-hub-signature-256');
+    if (
+      !rawBody ||
+      !signature ||
+      !this.instagramService.verifyRequestSHA256(rawBody, signature)
+    ) {
+      throw new UnauthorizedException();
+    }
+
+    console.log('instagram: ', rawBody);
 
     const webhookToken = this.config.getWhatsAppWebhookToken;
 

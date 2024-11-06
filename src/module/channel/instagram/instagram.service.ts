@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
+import * as crypto from 'crypto';
 
 import { Database } from 'src/database/database';
 import { InstagramAuthConfig } from './instagram.type';
 import { InstagramWebhookType } from './instagram.schema';
 import { ChannelService } from '../channel.service';
 import { InstagramAPI } from './instagram.api';
+import { ApiConfigService } from 'src/config/api-config.service';
 
 @Injectable()
 export class InstagramService {
@@ -13,7 +15,19 @@ export class InstagramService {
     private readonly db: Database,
     private readonly channelService: ChannelService,
     private readonly instagramAPI: InstagramAPI,
+    private readonly config: ApiConfigService,
   ) {}
+
+  verifyRequestSHA256(body: string, signature: string) {
+    const appSecret = this.config.getInstagramAppSecret;
+
+    const hash = crypto
+      .createHmac('sha256', appSecret)
+      .update(body)
+      .digest('hex');
+
+    return signature === `sha256=${hash}`;
+  }
 
   async handleMessage(content: InstagramWebhookType) {
     // Async execution
