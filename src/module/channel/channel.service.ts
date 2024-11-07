@@ -262,7 +262,7 @@ export class ChannelService {
     }
   }
 
-  transformRaw(data: any): ChannelMessage | null {
+  transformRaw(data: JSON): ChannelMessage | null {
     const instagram = InstagramMessage.safeParse(data);
     if (instagram.success) {
       const {
@@ -271,6 +271,8 @@ export class ChannelService {
 
       return { body };
     }
+
+    // console.log(instagram.error);
 
     // if (data satisfies WAMessage) {
     //   return {

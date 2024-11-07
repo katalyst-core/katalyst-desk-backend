@@ -6,7 +6,6 @@ import {
   primaryKey,
   foreignKey,
   timestamp,
-  text,
   jsonb,
   unique,
 } from 'drizzle-orm/pg-core';
@@ -263,7 +262,7 @@ export const ticketMessage = pgTable(
     agentId: uuid('agent_id'),
     messageCode: varchar('message_code'),
     isCustomer: boolean('is_customer').notNull().default(false),
-    messageContent: text('message_content').notNull(),
+    messageContent: jsonb('message_content').notNull(),
     messageStatus: varchar('message_status'),
     ...AuditFields,
   },

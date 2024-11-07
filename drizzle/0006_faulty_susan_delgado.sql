@@ -1,0 +1,1 @@
+ALTER TABLE "ticket_message" ADD COLUMN "message_content" jsonb NOT NULL;

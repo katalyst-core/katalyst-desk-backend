@@ -1,0 +1,1 @@
+ALTER TABLE "ticket_message" DROP COLUMN IF EXISTS "message_content";
