@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { ApiConfigService } from 'src/config/api-config.service';
 import { WhatsAppService } from './whatsapp.service';
 
-@Controller('whatsapp')
+@Controller('channel/whatsapp')
 export class WhatsAppController {
   constructor(
     private readonly config: ApiConfigService,
@@ -12,7 +12,7 @@ export class WhatsAppController {
 
   @All('webhook')
   verifyWebhook(@Req() req: Request, @Res() res: Response) {
-    console.log('req:', JSON.stringify(req.body));
+    console.log('whatsapp:', JSON.stringify(req.body));
 
     const webhookToken = this.config.getWhatsAppWebhookToken;
 
@@ -24,7 +24,7 @@ export class WhatsAppController {
       return res.send(challenge);
     }
 
-    this.whatsAppService.handleMessage(req.body);
+    // this.whatsAppService.handleMessage(req.body);
 
     res.sendStatus(200);
   }

@@ -72,7 +72,7 @@ export class InstagramController {
 
     const { code, organization_id: organizationId } = data;
 
-    await this.instagramService.authUser(code, agentId, organizationId);
+    await this.instagramService.authChannel(code, agentId, organizationId);
 
     return {
       code: 200,

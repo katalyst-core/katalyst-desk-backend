@@ -53,7 +53,7 @@ export class InstagramService {
     );
   }
 
-  async authUser(code: string, agentId: UUID, organizationId: UUID) {
+  async authChannel(code: string, agentId: UUID, organizationId: UUID) {
     const org = await this.db
       .selectFrom('organization')
       .select(['organization.organizationId'])
