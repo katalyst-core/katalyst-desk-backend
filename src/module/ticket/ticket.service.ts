@@ -100,6 +100,21 @@ export class TicketService {
             .whereRef('ticketMessage.ticketId', '=', 'ticket.ticketId'),
         ),
       )
+      .where(({ eb, selectFrom }) =>
+        eb(
+          'ticket.createdAt',
+          '=',
+          selectFrom('ticket')
+            .select(['ticket.createdAt'])
+            .whereRef(
+              'ticket.channelCustomerId',
+              '=',
+              'channelCustomer.channelCustomerId',
+            )
+            .orderBy('ticket.createdAt', 'desc')
+            .limit(1),
+        ),
+      )
       .orderBy('latestMessage.createdAt', 'desc');
 
     const tickets = await this.util.executeWithTableOptions(

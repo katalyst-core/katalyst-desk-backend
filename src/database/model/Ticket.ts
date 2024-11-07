@@ -1,8 +1,9 @@
 import { UUID } from 'crypto';
 import { Generated } from 'kysely';
 import { TicketStatusId } from './TicketStatus';
+import { AuditFields } from '.';
 
-export interface Ticket {
+export interface Ticket extends AuditFields {
   ticketId: Generated<UUID>;
   ticketCode: string;
   organizationId: UUID;
