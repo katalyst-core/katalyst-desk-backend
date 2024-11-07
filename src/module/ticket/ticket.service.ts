@@ -77,7 +77,7 @@ export class TicketService {
         'ticket.ticketCode',
         'masterCustomer.customerName',
         'latestMessage.isCustomer',
-        'latestMessage.isRead',
+        'latestMessage.messageStatus',
         'latestMessage.createdAt',
         'latestMessage.messageContent',
         selectFrom('ticketMessage')
@@ -85,7 +85,7 @@ export class TicketService {
           .select(({ fn }) => [
             fn.count<number>('ticketMessage.ticketId').as('unreadCount'),
           ])
-          .where('ticketMessage.isRead', '=', false)
+          .where('ticketMessage.messageStatus', '!=', 'read')
           .as('unread'),
       ])
       .where('ticket.organizationId', '=', orgId)
@@ -169,7 +169,7 @@ export class TicketService {
         'ticketMessage.messageId',
         'ticketMessage.messageContent',
         'ticketMessage.isCustomer',
-        'ticketMessage.isRead',
+        'ticketMessage.messageStatus',
         'ticketMessage.createdAt',
       ])
       .where('ticketMessage.ticketId', '=', ticketId)
@@ -216,10 +216,12 @@ export class TicketService {
       });
     }
 
+    // TODO: Read message in their respective channel
+
     await this.db
       .updateTable('ticketMessage')
-      .set({ isRead: true })
-      .where('ticketMessage.isRead', '=', false)
+      .set({ messageStatus: 'read' })
+      .where('ticketMessage.messageStatus', '!=', 'read')
       .where('ticketMessage.ticketId', '=', ticketId)
       .execute();
   }

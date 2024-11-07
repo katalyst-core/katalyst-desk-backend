@@ -11,5 +11,4 @@ export interface TicketMessage extends AuditFields {
   messageStatus: MessageStatusId;
   isCustomer: boolean;
   messageContent: JSON;
-  isRead: boolean;
 }
