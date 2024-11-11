@@ -16,7 +16,7 @@ import { NewOrganizationDTO } from './dto/new-organization-dto';
 import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
 import { AgentAccess } from '../auth/auth.type';
 import { UtilService } from 'src/util/util.service';
-import { TicketsResponseDTO } from './dto/tickets-response';
+import { TicketsResponseDTO } from '../ticket/dto/tickets-response';
 import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
 import { TicketService } from '../ticket/ticket.service';
 

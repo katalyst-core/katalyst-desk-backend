@@ -37,6 +37,18 @@ export class ApiConfigService {
     return this.configService.get('JWT_GATEWAY_EXPIRY', { infer: true });
   }
 
+  get getFacebookToken(): string {
+    return this.configService.get('FACEBOOK_TOKEN', { infer: true });
+  }
+
+  get getFacebookClientId(): string {
+    return this.configService.get('FACEBOOK_CLIENT_ID', { infer: true });
+  }
+
+  get getFacebookClientSecret(): string {
+    return this.configService.get('FACEBOOK_CLIENT_SECRET', { infer: true });
+  }
+
   get getWhatsAppWebhookToken(): string {
     return this.configService.get('WHATSAPP_WEBHOOK_TOKEN', { infer: true });
   }

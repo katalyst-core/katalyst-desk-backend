@@ -4,7 +4,7 @@ import { lastValueFrom } from 'rxjs';
 
 import { ApiConfigService } from 'src/config/api-config.service';
 import { Database } from 'src/database/database';
-import { InstagramAuthConfig } from './instagram.type';
+import { InstagramConfig } from './instagram.type';
 
 @Injectable()
 export class InstagramAPI {
@@ -62,19 +62,14 @@ export class InstagramAPI {
     text: string,
   ) {
     const channel = await this.db
-      .selectFrom('channelAuth')
-      .innerJoin(
-        'channel',
-        'channel.channelAuthId',
-        'channelAuth.channelAuthId',
-      )
-      .select(['channelAuth.channelAuthConfig'])
+      .selectFrom('channel')
+      .select(['channel.channelConfig'])
       .where('channel.channelAccount', '=', channelAccount)
       .where('channel.channelType', '=', 'instagram')
       .executeTakeFirst();
 
     const { access_token: accessToken } =
-      channel.channelAuthConfig as InstagramAuthConfig;
+      channel.channelConfig as InstagramConfig;
 
     return await lastValueFrom(
       this.http.post(

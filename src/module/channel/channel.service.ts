@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-
-import { ChannelMessage } from './channel.type';
 import { randomUUID, UUID } from 'crypto';
+import * as crypto from 'crypto';
+
+import { ChannelMessage, RegisterMessage } from './channel.type';
 import { Database } from 'src/database/database';
-import { InstagramMessage } from './instagram/instagram.schema';
+import { InstagramMessageSchema } from './instagram/instagram.schema';
 import { UtilService } from 'src/util/util.service';
 import { ChannelGateway } from './channel.gateway';
 import { WsTicketMessageDTO } from './dto/ws-ticket-message-dto';
 import { WsNewTicketDTO } from './dto/ws-new-ticket-dto';
+import { WhatsAppMessageSchema } from './whatsapp/whatsapp.schema';
 
 @Injectable()
 export class ChannelService {
@@ -32,28 +34,28 @@ export class ChannelService {
     }
 
     const channels = await this.db
-      .selectFrom('channelAuth')
+      .selectFrom('channel')
       .select([
-        'channelAuth.channelAuthId',
-        'channelAuth.channelAuthName',
-        'channelAuth.channelType',
+        'channel.channelId',
+        'channel.channelName',
+        'channel.channelType',
       ])
-      .where('channelAuth.organizationId', '=', orgId)
+      .where('channel.organizationId', '=', orgId)
       .execute();
 
     return channels;
   }
 
-  async deleteAccountById(channelAuthId: UUID, agentId: UUID) {
+  async deleteAccountById(channelId: UUID, agentId: UUID) {
     const channelAuth = await this.db
-      .selectFrom('channelAuth')
-      .select(['channelAuth.channelAuthId'])
+      .selectFrom('channel')
+      .select(['channel.channelId'])
       .innerJoin(
         'organization',
         'organization.organizationId',
-        'channelAuth.organizationId',
+        'channel.organizationId',
       )
-      .where('channelAuth.channelAuthId', '=', channelAuthId)
+      .where('channel.channelId', '=', channelId)
       .where('organization.ownerId', '=', agentId)
       .executeTakeFirst();
 
@@ -65,18 +67,27 @@ export class ChannelService {
     }
 
     await this.db
-      .deleteFrom('channelAuth')
-      .where('channelAuth.channelAuthId', '=', channelAuthId)
+      .deleteFrom('channel')
+      .where('channel.channelId', '=', channelId)
       .execute();
   }
 
-  async registerMessage(
-    senderId: string,
-    recipientId: string,
-    messageCode: string,
-    timestamp: number,
-    message: any,
-  ) {
+  verifySHA256(body: string, signature: string, secret: string) {
+    const hash = crypto.createHmac('sha256', secret).update(body).digest('hex');
+    return signature === `sha256=${hash}`;
+  }
+
+  async registerMessage(data: RegisterMessage) {
+    const {
+      senderId,
+      recipientId,
+      messageCode,
+      timestamp,
+      message,
+      channelType,
+      customerName,
+    } = data;
+
     try {
       await this.db.transaction().execute(async (tx) => {
         const channels = await tx
@@ -92,7 +103,7 @@ export class ChannelService {
               eb('channel.channelAccount', '=', recipientId),
             ]),
           )
-          .where('channel.channelType', '=', 'instagram')
+          .where('channel.channelType', '=', channelType)
           .execute();
 
         if (channels.length <= 0) {
@@ -136,7 +147,7 @@ export class ChannelService {
               const masterCustomer = await tx
                 .insertInto('masterCustomer')
                 .values({
-                  customerName: 'Unknown',
+                  customerName: customerName || 'Unknown',
                 })
                 .returning(['masterCustomer.masterCustomerId'])
                 .executeTakeFirst();
@@ -189,7 +200,7 @@ export class ChannelService {
               messageContent: message as JSON,
               createdAt: new Date(timestamp),
             })
-            .onConflict((b) => b.doNothing())
+            .onConflict((b) => b.doNothing()) // Update content
             .returning(['ticketMessage.messageId', 'ticketMessage.createdAt'])
             .executeTakeFirst();
 
@@ -263,22 +274,21 @@ export class ChannelService {
   }
 
   transformRaw(data: JSON): ChannelMessage | null {
-    const instagram = InstagramMessage.safeParse(data);
+    const instagram = InstagramMessageSchema.safeParse(data);
     if (instagram.success) {
-      const {
-        data: { text: body },
-      } = instagram;
+      const { text: body } = instagram.data;
 
       return { body };
     }
 
-    // console.log(instagram.error);
+    const whatsApp = WhatsAppMessageSchema.safeParse(data);
+    if (whatsApp.success) {
+      const {
+        text: { body },
+      } = whatsApp.data;
 
-    // if (data satisfies WAMessage) {
-    //   return {
-    //     body: data.text.body,
-    //   };
-    // }
+      return { body };
+    }
 
     return null;
   }

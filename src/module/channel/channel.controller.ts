@@ -51,12 +51,12 @@ export class ChannelController {
     @Req() req: Request,
     @Body() data: DeleteChannelAccountDTO,
   ) {
-    const { channel_account_id: channelAuthId } = data;
+    const { channel_account_id: channelId } = data;
 
     const user = req.user as AgentAccess;
     const { agentId } = user;
 
-    await this.channelService.deleteAccountById(channelAuthId, agentId);
+    await this.channelService.deleteAccountById(channelId, agentId);
 
     return {
       code: 200,

@@ -6,9 +6,10 @@ import { AuditFields } from '.';
 export interface Channel extends AuditFields {
   channelId: Generated<UUID>;
   organizationId: UUID;
-  channelAuthId: UUID;
   channelType: ChannelTypeId;
   channelName: string;
+  channelParentAccount: string;
   channelAccount: string;
   channelConfig: JSON;
+  channelExpiryDate: Date;
 }

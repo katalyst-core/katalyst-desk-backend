@@ -224,7 +224,7 @@ export const ticket = pgTable(
     organizationId: uuid('organization_id').notNull(),
     // teamId: uuid('team_id'), // Separate table
     // agentId: uuid('agent_id'), // Separate table
-    channelId: uuid('channel_id').notNull(),
+    channelId: uuid('channel_id'),
     channelCustomerId: uuid('channel_customer_id').notNull(),
     ticketStatus: varchar('ticket_status').notNull(),
     ...AuditFields,
@@ -294,11 +294,12 @@ export const channel = pgTable(
   {
     channelId: uuid('channel_id').notNull().defaultRandom(),
     organizationId: uuid('organization_id').notNull(),
-    channelAuthId: uuid('channel_auth_id').notNull(),
     channelType: varchar('channel_type').notNull(),
     channelName: varchar('channel_name'),
+    channelParentAccount: varchar('channel_parent_account'),
     channelAccount: varchar('channel_account').notNull(),
     channelConfig: jsonb('channel_config'),
+    channelExpiryDate: timestamp('channel_expiry_date', { withTimezone: true }),
     ...AuditFields,
   },
   (t) => [
@@ -309,43 +310,9 @@ export const channel = pgTable(
       foreignColumns: [organization.organizationId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_channel_auth_id',
-      columns: [t.channelAuthId],
-      foreignColumns: [channelAuth.channelAuthId],
-    }).onDelete('cascade'),
-    foreignKey({
       name: 'fk_channel_type',
       columns: [t.channelType],
       foreignColumns: [channelType.typeId],
     }).onDelete('restrict'),
-  ],
-);
-
-export const channelAuth = pgTable(
-  'channel_auth',
-  {
-    channelAuthId: uuid('channel_auth_id').notNull().defaultRandom(),
-    organizationId: uuid('organization_id').notNull(),
-    channelType: varchar('channel_type').notNull(),
-    channelAuthName: varchar('channel_auth_name'),
-    channelAuthAccount: varchar('channel_auth_account').notNull(),
-    channelAuthConfig: jsonb('channel_auth_config'),
-    channelAuthExpiryDate: timestamp('channel_auth_expiry_date', {
-      withTimezone: true,
-    }),
-    ...AuditFields,
-  },
-  (t) => [
-    primaryKey({ name: 'pk_channel_auth', columns: [t.channelAuthId] }),
-    foreignKey({
-      name: 'fk_organization_id',
-      columns: [t.organizationId],
-      foreignColumns: [organization.organizationId],
-    }).onDelete('cascade'),
-    foreignKey({
-      name: 'fk_channel_type',
-      columns: [t.channelType],
-      foreignColumns: [channelType.typeId],
-    }),
   ],
 );

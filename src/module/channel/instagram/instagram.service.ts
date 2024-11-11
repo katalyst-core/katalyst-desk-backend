@@ -1,13 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
-import * as crypto from 'crypto';
 
 import { Database } from 'src/database/database';
-import { InstagramAuthConfig } from './instagram.type';
-import { InstagramWebhookType } from './instagram.schema';
+import { InstagramConfig } from './instagram.type';
+import { InstagramMessageSchema, InstagramWebhook } from './instagram.schema';
 import { ChannelService } from '../channel.service';
 import { InstagramAPI } from './instagram.api';
-import { ApiConfigService } from 'src/config/api-config.service';
 
 @Injectable()
 export class InstagramService {
@@ -15,41 +13,32 @@ export class InstagramService {
     private readonly db: Database,
     private readonly channelService: ChannelService,
     private readonly instagramAPI: InstagramAPI,
-    private readonly config: ApiConfigService,
   ) {}
 
-  verifyRequestSHA256(body: string, signature: string) {
-    const appSecret = this.config.getInstagramAppSecret;
-
-    const hash = crypto
-      .createHmac('sha256', appSecret)
-      .update(body)
-      .digest('hex');
-
-    return signature === `sha256=${hash}`;
-  }
-
-  async handleMessage(content: InstagramWebhookType) {
+  handleMessage(content: InstagramWebhook) {
     // Async execution
-    content.entry.forEach(
-      async (_entry) =>
-        await _entry.messaging.forEach(async (_messaging) => {
-          const {
-            sender: { id: senderId },
-            recipient: { id: recipientId },
-            message: { mid: messageCode },
-            message,
-            timestamp,
-          } = _messaging;
+    content.entry.forEach((entry) =>
+      entry.messaging.forEach((messaging) => {
+        const {
+          sender: { id: senderId },
+          recipient: { id: recipientId },
+          message: { mid: messageCode },
+          message,
+          timestamp,
+        } = messaging;
 
-          await this.channelService.registerMessage(
-            senderId,
-            recipientId,
-            messageCode,
-            timestamp,
-            message,
-          );
-        }),
+        const parsedMessage = InstagramMessageSchema.safeParse(message);
+        const newMessage = parsedMessage.data;
+
+        this.channelService.registerMessage({
+          senderId,
+          recipientId,
+          messageCode,
+          timestamp: new Date(timestamp),
+          message: newMessage,
+          channelType: 'instagram',
+        });
+      }),
     );
   }
 
@@ -71,13 +60,13 @@ export class InstagramService {
       const { access_token: shortLivedAccessToken, user_id: channelUserId } =
         tokenResponse.data;
 
-      const exChannelAuth = await this.db
-        .selectFrom('channelAuth')
-        .select(['channelAuth.channelAuthId'])
-        .where('channelAuth.channelAuthAccount', '=', channelUserId)
+      const exChannel = await this.db
+        .selectFrom('channel')
+        .select(['channel.channelId'])
+        .where('channel.channelParentAccount', '=', channelUserId)
         .executeTakeFirst();
 
-      if (exChannelAuth) {
+      if (exChannel) {
         throw new BadRequestException('Account already registered');
       }
 
@@ -101,35 +90,20 @@ export class InstagramService {
         access_token,
         permissions,
         profile_picture_url,
-      } as InstagramAuthConfig;
+      } as InstagramConfig;
 
-      await this.db.transaction().execute(async (tx) => {
-        const channelAuth = await tx
-          .insertInto('channelAuth')
-          .values({
-            channelType: 'instagram',
-            organizationId,
-            channelAuthAccount: id,
-            channelAuthName: username,
-            channelAuthExpiryDate: expiryDate,
-            channelAuthConfig: config,
-          })
-          .returning(['channelAuthId'])
-          .executeTakeFirst();
-
-        const { channelAuthId } = channelAuth;
-
-        await tx
-          .insertInto('channel')
-          .values({
-            channelType: 'instagram',
-            organizationId,
-            channelAuthId,
-            channelAccount: user_id,
-            channelName: username,
-          })
-          .execute();
-      });
+      await this.db
+        .insertInto('channel')
+        .values({
+          channelType: 'instagram',
+          organizationId,
+          channelParentAccount: id,
+          channelAccount: user_id,
+          channelName: username,
+          channelConfig: config,
+          channelExpiryDate: expiryDate,
+        })
+        .execute();
     } catch (err) {
       console.log(err);
       throw new BadRequestException('Failed to authenticate user');

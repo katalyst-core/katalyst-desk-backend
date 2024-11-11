@@ -50,6 +50,20 @@
       "when": 1731004941728,
       "tag": "0006_faulty_susan_delgado",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1731051651618,
+      "tag": "0007_low_secret_warriors",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1731051835605,
+      "tag": "0008_dark_gunslinger",
+      "breakpoints": true
     }
   ]
 }

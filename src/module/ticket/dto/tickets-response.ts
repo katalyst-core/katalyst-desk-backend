@@ -23,8 +23,8 @@ export class TicketsResponseDTO extends ResponseDTO {
   @Expose({ name: 'is_customer' })
   isCustomer: boolean;
 
-  @Expose({ name: 'is_read' })
-  isRead: boolean;
+  @Expose({ name: 'message_status' })
+  messageStatus: boolean;
 
   @Expose({ name: 'unread_count' })
   unread: number;

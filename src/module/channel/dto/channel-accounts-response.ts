@@ -7,10 +7,10 @@ import { ResponseDTO } from 'src/common/dto/response-dto';
 export class ChannelAccountsResponseDTO extends ResponseDTO {
   @ShortenUUID()
   @Expose({ name: 'channel_account_id' })
-  channelAuthId: UUID;
+  channelId: UUID;
 
   @Expose({ name: 'channel_account_name' })
-  channelAuthName: string;
+  channelName: string;
 
   @Expose({ name: 'channel_type' })
   channelType: string;
