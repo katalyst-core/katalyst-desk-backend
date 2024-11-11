@@ -3,7 +3,11 @@ import { UUID } from 'crypto';
 
 import { Database } from 'src/database/database';
 import { InstagramConfig } from './instagram.type';
-import { InstagramMessageSchema, InstagramWebhook } from './instagram.schema';
+import {
+  InstagramMessage,
+  InstagramMessageSchema,
+  InstagramWebhook,
+} from './instagram.schema';
 import { ChannelService } from '../channel.service';
 import { InstagramAPI } from './instagram.api';
 
@@ -40,6 +44,37 @@ export class InstagramService {
         });
       }),
     );
+  }
+
+  async sendMessage(
+    channelAccount: string,
+    customerAccount: string,
+    text: string,
+  ) {
+    const channel = await this.db
+      .selectFrom('channel')
+      .select(['channel.channelConfig'])
+      .where('channel.channelAccount', '=', channelAccount)
+      .where('channel.channelType', '=', 'instagram')
+      .executeTakeFirst();
+
+    const { access_token: accessToken } =
+      channel.channelConfig as InstagramConfig;
+
+    const message: InstagramMessage = {
+      text,
+    };
+
+    const response = await this.instagramAPI.sendMessage(
+      channelAccount,
+      customerAccount,
+      message,
+      accessToken,
+    );
+
+    const { message_id: messageCode } = response.data;
+
+    return [messageCode, message];
   }
 
   async authChannel(code: string, agentId: UUID, organizationId: UUID) {

@@ -4,7 +4,8 @@ import { Database } from 'src/database/database';
 import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
 import { UtilService } from 'src/util/util.service';
 import { ChannelService } from '../channel/channel.service';
-import { InstagramAPI } from '../channel/instagram/instagram.api';
+import { InstagramService } from '../channel/instagram/instagram.service';
+import { WhatsAppService } from '../channel/whatsapp/whatsapp.service';
 
 @Injectable()
 export class TicketService {
@@ -12,7 +13,8 @@ export class TicketService {
     private readonly db: Database,
     private readonly util: UtilService,
     private readonly channelService: ChannelService,
-    private readonly instagramAPI: InstagramAPI,
+    private readonly instagramService: InstagramService,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   async hasAccessToTicket(ticketId: UUID, agentId: UUID) {
@@ -266,15 +268,34 @@ export class TicketService {
     const { customerAccount, channelAccount, channelType } = ticket;
 
     try {
+      let messageCode, messageContent;
+
       if (channelType == 'instagram') {
-        await this.instagramAPI.sendMessage(
+        [messageCode, messageContent] = await this.instagramService.sendMessage(
           channelAccount,
           customerAccount,
           text,
         );
-
-        return;
       }
+
+      if (channelType == 'whatsapp') {
+        [messageCode, messageContent] = await this.whatsAppService.sendMessage(
+          channelAccount,
+          customerAccount,
+          text,
+        );
+      }
+
+      if (!messageCode || !messageContent) throw new Error();
+
+      this.channelService.registerMessage({
+        messageCode,
+        message: messageContent,
+        channelType,
+        senderId: channelAccount,
+        recipientId: customerAccount,
+        timestamp: new Date(Date.now()),
+      });
     } catch (err) {
       console.log(err);
       throw new BadRequestException({
@@ -282,11 +303,6 @@ export class TicketService {
         code: 'CANT_SEND_MESSAGE',
       });
     }
-
-    throw new BadRequestException({
-      message: 'Unknown platform',
-      code: 'UNKNOWN_PLATFORM',
-    });
   }
 
   async getTicketDetails(ticketId: UUID) {

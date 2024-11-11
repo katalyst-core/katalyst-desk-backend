@@ -3,9 +3,10 @@ import { UUID } from 'crypto';
 
 import { ShortenUUID } from 'src/common/decorator/class-transformer';
 import { ResponseDTO } from 'src/common/dto/response-dto';
+import { MessageStatusId } from 'src/database/model/MessageStatus';
 
 @Exclude()
-export class WsTicketMessageDTO extends ResponseDTO {
+export class TicketMessageResponseDTO extends ResponseDTO {
   @ShortenUUID()
   @Expose({ name: 'ticket_id' })
   ticketId: UUID;
@@ -20,8 +21,8 @@ export class WsTicketMessageDTO extends ResponseDTO {
   @Expose({ name: 'is_customer' })
   isCustomer: boolean;
 
-  @Expose({ name: 'is_read' })
-  isRead: boolean;
+  @Expose({ name: 'message_status' })
+  messageStatus: MessageStatusId;
 
   @Expose({ name: 'timestamp' })
   createdAt: Date;

@@ -4,7 +4,11 @@ import { Database } from 'src/database/database';
 import { UUID } from 'crypto';
 import { WhatsAppAPI } from './whatsapp.api';
 import { FacebookAPI } from '../facebook/facebook.api';
-import { WhatsAppMessageSchema, WhatsAppWebhook } from './whatsapp.schema';
+import {
+  WhatsAppMessage,
+  WhatsAppMessageSchema,
+  WhatsAppWebhook,
+} from './whatsapp.schema';
 import { ChannelService } from '../channel.service';
 
 @Injectable()
@@ -37,8 +41,8 @@ export class WhatsAppService {
           const newTimestamp = new Date(Number(timestamp) * 1000);
 
           this.channelService.registerMessage({
-            senderId: channelId,
-            recipientId: customerId,
+            senderId: customerId,
+            recipientId: channelId,
             messageCode,
             timestamp: newTimestamp,
             message: newMessage,
@@ -48,6 +52,40 @@ export class WhatsAppService {
         });
       });
     });
+  }
+
+  async sendMessage(
+    channelAccount: string,
+    customerAccount: string,
+    text: string,
+  ) {
+    const channel = await this.db
+      .selectFrom('channel')
+      .select(['channel.channelConfig'])
+      .where('channel.channelAccount', '=', channelAccount)
+      .where('channel.channelType', '=', 'whatsapp')
+      .executeTakeFirst();
+
+    const { access_token: accessToken } =
+      channel.channelConfig as WhatsAppConfig;
+
+    const message: WhatsAppMessage = {
+      type: 'text',
+      text: {
+        body: text,
+      },
+    };
+
+    const response = await this.whatsAppAPI.sendMessage(
+      channelAccount,
+      customerAccount,
+      message,
+      accessToken,
+    );
+
+    const messageCode = response.data.messages[0].id;
+
+    return [messageCode, message];
   }
 
   async authenticateChannel(

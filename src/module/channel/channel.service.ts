@@ -7,8 +7,8 @@ import { Database } from 'src/database/database';
 import { InstagramMessageSchema } from './instagram/instagram.schema';
 import { UtilService } from 'src/util/util.service';
 import { ChannelGateway } from './channel.gateway';
-import { WsTicketMessageDTO } from './dto/ws-ticket-message-dto';
-import { WsNewTicketDTO } from './dto/ws-new-ticket-dto';
+import { TicketMessageResponseDTO } from './dto/ticket-message-response-dto';
+import { NewTicketResponseDTO } from './dto/new-ticket-response-dto';
 import { WhatsAppMessageSchema } from './whatsapp/whatsapp.schema';
 
 @Injectable()
@@ -195,25 +195,38 @@ export class ChannelService {
             .values({
               ticketId,
               messageCode,
-              messageStatus: 'received',
               isCustomer,
+              messageStatus: 'received',
               messageContent: message as JSON,
-              createdAt: new Date(timestamp),
+              createdAt: timestamp,
             })
-            .onConflict((b) => b.doNothing()) // Update content
-            .returning(['ticketMessage.messageId', 'ticketMessage.createdAt'])
+            .onConflict((b) =>
+              b.column('messageCode').doUpdateSet({
+                messageContent: message as JSON,
+                createdAt: timestamp,
+                updatedAt: new Date(Date.now()),
+              }),
+            ) // Update content
+            .returning([
+              'ticketMessage.messageId',
+              'ticketMessage.createdAt',
+              'ticketMessage.updatedAt',
+            ])
             .executeTakeFirst();
 
-          const { organizationId } = channel;
+          if (newMessage.updatedAt) return;
 
           const agents = await tx
             .selectFrom('organizationAgent')
             .select(['organizationAgent.agentId'])
-            .where('organizationAgent.organizationId', '=', organizationId)
+            .where(
+              'organizationAgent.organizationId',
+              '=',
+              channel.organizationId,
+            )
             .execute();
 
           const channelMessage = this.transformRaw(message);
-
           if (isTicketNew) {
             const masterCustomer = await tx
               .selectFrom('masterCustomer')
@@ -230,39 +243,39 @@ export class ChannelService {
               )
               .executeTakeFirst();
 
-            const wsMessage = {
+            const wsTicket = {
               ...ticket,
               ...newMessage,
               ...masterCustomer,
-              messageContent: channelMessage,
               isCustomer,
+              messageContent: channelMessage,
               unread: 1,
-              isRead: false, // Change this to the actual is read
-            } satisfies WsNewTicketDTO;
+              messageStatus: 'received',
+            } satisfies NewTicketResponseDTO;
 
             agents.forEach(({ agentId }) =>
               this.gateway.sendAgent(
                 agentId,
                 'new-ticket',
-                wsMessage,
-                WsNewTicketDTO,
+                wsTicket,
+                NewTicketResponseDTO,
               ),
             );
           } else {
             const wsMessage = {
               ...ticket,
               ...newMessage,
-              messageContent: channelMessage,
               isCustomer,
-              isRead: false, // Change this to the actual is read
-            } satisfies WsTicketMessageDTO;
+              messageContent: channelMessage,
+              messageStatus: 'received',
+            } satisfies TicketMessageResponseDTO;
 
             agents.forEach(({ agentId }) =>
               this.gateway.sendAgent(
                 agentId,
                 'ticket-message',
                 wsMessage,
-                WsTicketMessageDTO,
+                TicketMessageResponseDTO,
               ),
             );
           }

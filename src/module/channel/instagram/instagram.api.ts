@@ -3,14 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 
 import { ApiConfigService } from 'src/config/api-config.service';
-import { Database } from 'src/database/database';
-import { InstagramConfig } from './instagram.type';
+import { InstagramMessage } from './instagram.schema';
 
 @Injectable()
 export class InstagramAPI {
   constructor(
     private readonly config: ApiConfigService,
-    private readonly db: Database,
     private readonly http: HttpService,
   ) {}
 
@@ -59,18 +57,9 @@ export class InstagramAPI {
   async sendMessage(
     channelAccount: string,
     customerAccount: string,
-    text: string,
+    message: InstagramMessage,
+    accessToken,
   ) {
-    const channel = await this.db
-      .selectFrom('channel')
-      .select(['channel.channelConfig'])
-      .where('channel.channelAccount', '=', channelAccount)
-      .where('channel.channelType', '=', 'instagram')
-      .executeTakeFirst();
-
-    const { access_token: accessToken } =
-      channel.channelConfig as InstagramConfig;
-
     return await lastValueFrom(
       this.http.post(
         `https://graph.instagram.com/v21.0/${channelAccount}/messages`,
@@ -78,9 +67,7 @@ export class InstagramAPI {
           recipient: {
             id: customerAccount,
           },
-          message: {
-            text,
-          },
+          message,
         },
         {
           headers: {

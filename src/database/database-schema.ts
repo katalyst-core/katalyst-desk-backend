@@ -12,7 +12,7 @@ import {
 
 const AuditFields = {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }),
   createdBy: uuid('created_by'),
   updatedBy: uuid('updated_by'),
 };

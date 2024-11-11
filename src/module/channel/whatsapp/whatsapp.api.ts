@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
+import { WhatsAppMessage } from './whatsapp.schema';
 
 @Injectable()
 export class WhatsAppAPI {
@@ -45,6 +46,31 @@ export class WhatsAppAPI {
           Authorization: `Bearer ${accessToken}`,
         },
       }),
+    );
+  }
+
+  async sendMessage(
+    channelAccount: string,
+    customerAccount: string,
+    message: WhatsAppMessage,
+    accessToken: string,
+  ) {
+    return await lastValueFrom(
+      this.http.post(
+        `https://graph.facebook.com/v21.0/${channelAccount}/messages`,
+        JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: customerAccount,
+          type: 'text',
+          ...message,
+        }),
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
     );
   }
 }

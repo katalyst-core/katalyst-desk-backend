@@ -15,5 +15,6 @@ import { HttpModule } from '@nestjs/axios';
   ],
   controllers: [WhatsAppController],
   providers: [WhatsAppService, WhatsAppAPI],
+  exports: [WhatsAppService],
 })
 export class WhatsAppModule {}

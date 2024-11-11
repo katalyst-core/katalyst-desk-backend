@@ -10,6 +10,6 @@ import { InstagramAPI } from './instagram.api';
   imports: [forwardRef(() => ChannelModule), HttpModule],
   controllers: [InstagramController],
   providers: [InstagramService, InstagramAPI],
-  exports: [InstagramAPI],
+  exports: [InstagramService],
 })
 export class InstagramModule {}
