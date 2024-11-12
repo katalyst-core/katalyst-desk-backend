@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
-import { WebSocket } from 'undici';
+import { Pool } from 'pg';
+import { CamelCasePlugin, PostgresDialect } from 'kysely';
 
 import {
   ConfigurableDatabaseModule,
@@ -7,8 +8,6 @@ import {
 } from './database.module-definition';
 import { DatabaseOptions } from './database-options';
 import { Database } from './database';
-import { NeonDialect } from 'kysely-neon';
-import { CamelCasePlugin } from 'kysely';
 
 @Global()
 @Module({
@@ -18,9 +17,10 @@ import { CamelCasePlugin } from 'kysely';
       provide: Database,
       inject: [DATABASE_OPTIONS],
       useFactory: (databaseOptions: DatabaseOptions) => {
-        const dialect = new NeonDialect({
-          connectionString: databaseOptions.connectionString,
-          webSocketConstructor: WebSocket,
+        const dialect = new PostgresDialect({
+          pool: new Pool({
+            connectionString: databaseOptions.connectionString,
+          }),
         });
 
         return new Database({
