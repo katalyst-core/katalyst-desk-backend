@@ -60,7 +60,10 @@ export class UtilService {
     data: any,
     dto: { new (...args: any[]): T },
   ) {
-    const serialize = (c: T) => instanceToPlain(new dto(c));
+    const serialize = (c: T) =>
+      instanceToPlain(new dto(c), {
+        excludeExtraneousValues: true,
+      });
 
     const remap = (c: T | T[]) =>
       Array.isArray(c) ? c.map(serialize) : serialize(c);

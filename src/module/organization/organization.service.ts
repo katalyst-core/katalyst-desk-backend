@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 
 import { Database } from 'src/database/database';
@@ -40,11 +40,20 @@ export class OrganizationService {
     });
   }
 
-  async getOrganizationById(organizationId: UUID) {
-    return await this.db
+  async getOrganizationById(orgId: UUID) {
+    const org = await this.db
       .selectFrom('organization')
-      .select(['organizationId', 'organization.name'])
-      .where('organizationId', '=', organizationId)
+      .select(['organization.organizationId', 'organization.name'])
+      .where('organization.organizationId', '=', orgId)
       .executeTakeFirst();
+
+    if (!org) {
+      throw new BadRequestException({
+        code: 'ORGANIZATION_NOT_FOUND',
+        message: 'Organization not found',
+      });
+    }
+
+    return org;
   }
 }

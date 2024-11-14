@@ -1,3 +1,4 @@
+import { TeamModule } from './module/team/team.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -28,6 +29,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     OrganizationModule,
     ChannelModule,
     TicketModule,
+    TeamModule,
     WebsocketModule,
   ],
   controllers: [AppController],
