@@ -1,7 +1,8 @@
-import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
+import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
-import { UtilService } from 'src/util/util.service';
+
+import { UtilService } from '@util/util.service';
 
 export interface Response {
   status: number;

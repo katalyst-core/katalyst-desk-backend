@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Get,
   HttpStatus,
   Ip,
   Post,
@@ -13,13 +12,13 @@ import {
 import { CookieOptions, Request, Response } from 'express';
 
 import { AgentBasicAuth, AgentRefresh } from './auth.type';
-import { NewAgentDTO } from './dto/new-agent-dto';
 import { AuthService } from './auth.service';
 import { BasicGuard } from './strategy/basic.strategy';
 import { JWTRefresh } from './strategy/jwt-refresh.strategy';
-import { AccessTokenResponseDTO } from './dto/access-token-response';
 import { JWTAccess } from './strategy/jwt-access.strategy';
-import { GatewayTokenResponseDTO } from './dto/gateway-token-response';
+import { NewAgentDTO } from './dto/new-agent-dto';
+import { AccessTokenResponseDTO } from './dto/access-token-response-dto';
+import { GatewayTokenResponseDTO } from './dto/gateway-token-response-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -75,6 +74,8 @@ export class AuthController {
   ) {
     const user = req.user as AgentRefresh;
     const { agentId, sessionToken } = user;
+
+    void sessionToken, res;
 
     // const { name, value, options } = await this.authService.createRefreshToken(
     //   agentId,

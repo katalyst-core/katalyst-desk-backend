@@ -11,14 +11,15 @@ import {
 import { Request, Response } from 'express';
 import { UUID } from 'crypto';
 
+import { Agent } from '@decorator/param';
+import { GuardService } from '@util/guard.service';
+import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
+
 import { WhatsAppService } from './whatsapp.service';
 import { WhatsAppAuthDTO } from './dto/whatsapp-auth-dto';
-import { ChannelService } from '../channel.service';
 import { ApiConfigService } from 'src/config/api-config.service';
-import { Agent } from 'src/common/decorator/param';
-import { JWTAccess } from 'src/module/auth/strategy/jwt-access.strategy';
-import { GuardService } from 'src/util/guard.service';
 import { WhatsAppWebhookSchema } from './whatsapp.schema';
+import { ChannelService } from '../channel.service';
 
 @Controller('channel/whatsapp')
 export class WhatsAppController {
@@ -74,7 +75,19 @@ export class WhatsAppController {
   ) {
     const { organization_id, phone_number_id, waba_id, code } = data;
 
-    await this.guard.isOrganizationOwner(agentId, organization_id);
+    const hasAccess = await this.guard.hasAccessToOrganization(
+      'channel.register.whatsapp',
+      agentId,
+      organization_id,
+    );
+
+    if (!hasAccess) {
+      throw new UnauthorizedException({
+        message: 'Invalid Access',
+        code: 'INVALID_ACCESS',
+      });
+    }
+
     await this.whatsAppService.authenticateChannel(
       phone_number_id,
       waba_id,

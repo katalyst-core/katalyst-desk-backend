@@ -1,3 +1,4 @@
+import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -5,11 +6,12 @@ import {
 } from '@nestjs/websockets';
 import { UUID } from 'crypto';
 import { Server } from 'socket.io';
+
+import { ResponseDTO } from '@dto/response-dto';
+import { UtilService } from '@util/util.service';
+import { AllExceptionWsFilter } from '@filter/all-exception-ws.filter';
+
 import { WsTypes } from './websocket.type';
-import { ResponseDTO } from 'src/common/dto/response-dto';
-import { UtilService } from 'src/util/util.service';
-import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
-import { AllExceptionWsFilter } from 'src/common/filter/all-exception-ws.filter';
 
 @WebSocketGateway()
 @UsePipes(

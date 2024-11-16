@@ -1,9 +1,9 @@
 import { Exclude, Expose } from 'class-transformer';
 import { UUID } from 'crypto';
 
-import { ShortenUUID } from 'src/common/decorator/class-transformer';
-import { ResponseDTO } from 'src/common/dto/response-dto';
-import { MessageStatusId } from 'src/database/model/MessageStatus';
+import { ResponseDTO } from '@dto/response-dto';
+import { ShortenUUID } from '@decorator/class-transformer';
+import { MessageStatusId } from '@database/model/MessageStatus';
 
 @Exclude()
 export class NewTicketResponseDTO extends ResponseDTO {
@@ -13,6 +13,9 @@ export class NewTicketResponseDTO extends ResponseDTO {
 
   @Expose({ name: 'ticket_code' })
   ticketCode: string;
+
+  @Expose({ name: 'ticket_status' })
+  ticketStatus: string;
 
   @Expose({ name: 'display_name' })
   customerName: string;

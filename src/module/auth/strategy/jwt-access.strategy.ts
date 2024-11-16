@@ -8,8 +8,9 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
-import { ApiConfigService } from 'src/config/api-config.service';
-import { UtilService } from 'src/util/util.service';
+import { ApiConfigService } from '@config/api-config.service';
+import { UtilService } from '@util/util.service';
+
 import { AgentAccess, AgentAccessJWT } from '../auth.type';
 
 @Injectable()

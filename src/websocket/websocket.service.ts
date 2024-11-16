@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { ApiConfigService } from 'src/config/api-config.service';
-import { AgentGatewayJWT } from 'src/module/auth/auth.type';
-import { UtilService } from 'src/util/util.service';
+
+import { UtilService } from '@util/util.service';
+import { AgentGatewayJWT } from '@module/auth/auth.type';
+import { ApiConfigService } from '@config/api-config.service';
 
 @Injectable()
 export class WebsocketService {

@@ -9,37 +9,33 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-
-import { TicketService } from './ticket.service';
-import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
-import { UtilService } from 'src/util/util.service';
-import { AgentAccess } from '../auth/auth.type';
-import { MessagesResponseDTO } from './dto/messages-response';
-import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
-import { SendMessageDTO } from './dto/send-message-dto';
 import { UUID } from 'crypto';
-import { Agent, ParamUUID } from 'src/common/decorator/param';
-import { TicketDetailsResponseDTO } from './dto/ticket-details-response';
+
+import { PermGuard } from '@decorator/route';
+import { Agent, ParamUUID } from '@decorator/param';
+import { TableOptionsDTO } from '@util/dto/table-options-dto';
+
+import { AgentAccess } from '../auth/auth.type';
+import { TicketService } from './ticket.service';
+import { UtilService } from 'src/util/util.service';
+import { SendMessageDTO } from './dto/send-message-dto';
+import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
+import { MessagesResponseDTO } from './dto/messages-response-dto';
+import { TicketDetailsResponseDTO } from './dto/ticket-details-response-dto';
 
 @UseGuards(JWTAccess)
-@Controller('ticket')
+@Controller('/ticket')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
-  @Get('/:id/messages')
+  @PermGuard('message.list')
+  @Get('/:ticketId/messages')
   async getMessages(
-    @Req() req: Request,
-    @Param('id') ticketShortId: string,
+    @ParamUUID('ticketId') ticketId: UUID,
     @Query() tableOptions: TableOptionsDTO,
   ) {
-    const ticketId = UtilService.restoreUUID(ticketShortId);
-
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
     const messages = await this.ticketService.getMessagesByTicketId(
       ticketId,
-      agentId,
       tableOptions,
     );
 
@@ -52,6 +48,7 @@ export class TicketController {
     };
   }
 
+  //TODO: Replace this later with read on agent send message
   @Post('/:id/read-messages')
   async readMessages(@Req() req: Request, @Param('id') ticketShortId: string) {
     const ticketId = UtilService.restoreUUID(ticketShortId);
@@ -66,18 +63,14 @@ export class TicketController {
     };
   }
 
-  @Post('/:id/send-message')
+  @PermGuard('ticket.message.send')
+  @Post('/:ticketId/send-message')
   async sendMessage(
-    @Req() req: Request,
-    @Param('id') ticketShortId: string,
+    @Agent() agentId: UUID,
+    @ParamUUID('ticketId') ticketId: UUID,
     @Body() data: SendMessageDTO,
   ) {
-    const ticketId = UtilService.restoreUUID(ticketShortId);
     const { text } = data;
-
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
     await this.ticketService.sendMessage(ticketId, agentId, text);
 
     return {
@@ -86,12 +79,9 @@ export class TicketController {
     };
   }
 
-  @Get('/:id/details')
-  async getTicketDetails(
-    @Agent() agentId: UUID,
-    @ParamUUID('id') ticketId: UUID,
-  ) {
-    await this.ticketService.hasAccessToTicket(ticketId, agentId);
+  @PermGuard('ticket.detail')
+  @Get('/:ticketId/details')
+  async getTicketDetails(@ParamUUID('ticketId') ticketId: UUID) {
     const ticket = await this.ticketService.getTicketDetails(ticketId);
 
     return {
@@ -104,9 +94,9 @@ export class TicketController {
     };
   }
 
-  @Get('/:id/close')
-  async closeTicket(@Agent() agentId: UUID, @ParamUUID('id') ticketId: UUID) {
-    await this.ticketService.hasAccessToTicket(ticketId, agentId);
+  @PermGuard('ticket.close')
+  @Get('/:ticketId/close')
+  async closeTicket(@ParamUUID('ticketId') ticketId: UUID) {
     await this.ticketService.closeTicket(ticketId);
 
     return {

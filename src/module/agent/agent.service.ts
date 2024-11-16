@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
-import { Database } from 'src/database/database';
+
+import { Database } from '@database/database';
 
 @Injectable()
 export class AgentService {

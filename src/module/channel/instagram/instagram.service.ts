@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 
-import { Database } from 'src/database/database';
+import { Database } from '@database/database';
 import { InstagramConfig } from './instagram.type';
+import { InstagramAPI } from './instagram.api';
+import { ChannelService } from '../channel.service';
 import {
   InstagramMessage,
   InstagramMessageSchema,
   InstagramWebhook,
 } from './instagram.schema';
-import { ChannelService } from '../channel.service';
-import { InstagramAPI } from './instagram.api';
 
 @Injectable()
 export class InstagramService {
@@ -77,18 +77,7 @@ export class InstagramService {
     return [messageCode, message];
   }
 
-  async authChannel(code: string, agentId: UUID, organizationId: UUID) {
-    const org = await this.db
-      .selectFrom('organization')
-      .select(['organization.organizationId'])
-      .where('organization.organizationId', '=', organizationId)
-      .where('organization.ownerId', '=', agentId)
-      .executeTakeFirst();
-
-    if (!org) {
-      throw new BadRequestException('Invalid username or organization');
-    }
-
+  async authenticateChannel(code: string, organizationId: UUID) {
     try {
       const tokenResponse = await this.instagramAPI.getAccessToken(code);
 

@@ -1,7 +1,8 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
-import { ApiConfigService } from 'src/config/api-config.service';
+
+import { ApiConfigService } from '@config/api-config.service';
 
 @Injectable()
 export class FacebookAPI {

@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-
+import { UUID } from 'crypto';
+import { CookieOptions } from 'express';
 import * as bcrypt from 'bcrypt';
 
-import { ApiConfigService } from 'src/config/api-config.service';
-import { Database } from 'src/database/database';
-import { UtilService } from 'src/util/util.service';
+import { ApiConfigService } from '@config/api-config.service';
+import { Database } from '@database/database';
+import { UtilService } from '@util/util.service';
+
 import { NewAgentDTO } from './dto/new-agent-dto';
-import { UUID } from 'crypto';
 import { AgentAccessJWT, AgentGatewayJWT, AgentRefreshJWT } from './auth.type';
-import { CookieOptions } from 'express';
 
 @Injectable()
 export class AuthService {

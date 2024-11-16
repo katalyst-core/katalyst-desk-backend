@@ -6,16 +6,13 @@ import {
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import * as bcrypt from 'bcrypt';
-
-import { Database } from 'src/database/database';
-import { AgentBasicAuth } from '../auth.type';
 import { Observable } from 'rxjs';
 
+import { Database } from '@database/database';
+import { AgentBasicAuth } from '../auth.type';
+
 @Injectable()
-export class BasicStrategy extends PassportStrategy(
-  Strategy,
-  'basic',
-) {
+export class BasicStrategy extends PassportStrategy(Strategy, 'basic') {
   constructor(private readonly db: Database) {
     super({
       username: 'username',

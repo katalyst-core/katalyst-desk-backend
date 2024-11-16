@@ -1,3 +1,4 @@
+import { UUID } from 'crypto';
 import { ChannelTypeId } from 'src/database/model/ChannelType';
 
 export type ChannelMessage = {
@@ -12,4 +13,5 @@ export type RegisterMessage = {
   message: any;
   channelType: ChannelTypeId;
   customerName?: string;
+  agentId?: UUID;
 };

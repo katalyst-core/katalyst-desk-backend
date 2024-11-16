@@ -1,15 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { WhatsAppConfig } from './whatsapp.type';
-import { Database } from 'src/database/database';
 import { UUID } from 'crypto';
+
+import { Database } from '@database/database';
+
+import { WhatsAppConfig } from './whatsapp.type';
 import { WhatsAppAPI } from './whatsapp.api';
 import { FacebookAPI } from '../facebook/facebook.api';
+import { ChannelService } from '../channel.service';
 import {
   WhatsAppMessage,
   WhatsAppMessageSchema,
   WhatsAppWebhook,
 } from './whatsapp.schema';
-import { ChannelService } from '../channel.service';
 
 @Injectable()
 export class WhatsAppService {

@@ -4,11 +4,13 @@ import {
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
-import { BaseGateway } from 'src/websocket/base.gateway';
-import { WsReadMessagesDTO } from './dto/ws-read-messages-dto';
-import { TicketService } from './ticket.service';
-import { WebsocketService } from 'src/websocket/websocket.service';
 import { Socket } from 'socket.io';
+
+import { BaseGateway } from '@websocket/base.gateway';
+
+import { TicketService } from './ticket.service';
+import { WsReadMessagesDTO } from './dto/ws-read-messages-dto';
+import { WebsocketService } from 'src/websocket/websocket.service';
 
 @WebSocketGateway()
 export class TicketGateway extends BaseGateway {

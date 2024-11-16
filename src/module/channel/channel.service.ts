@@ -18,21 +18,7 @@ export class ChannelService {
     private readonly gateway: ChannelGateway,
   ) {}
 
-  async getChannelAccountsByOrgId(orgId: UUID, agentId: UUID) {
-    const org = await this.db
-      .selectFrom('organization')
-      .select(['organization.organizationId'])
-      .where('organization.organizationId', '=', orgId)
-      .where('organization.ownerId', '=', agentId)
-      .executeTakeFirst();
-
-    if (!org) {
-      throw new BadRequestException({
-        message: `You don't have access`,
-        code: 'INSUFFICIENT_ACCESS',
-      });
-    }
-
+  async getChannelAccountsByOrgId(orgId: UUID) {
     const channels = await this.db
       .selectFrom('channel')
       .select([
@@ -46,30 +32,19 @@ export class ChannelService {
     return channels;
   }
 
-  async deleteAccountById(channelId: UUID, agentId: UUID) {
-    const channelAuth = await this.db
-      .selectFrom('channel')
-      .select(['channel.channelId'])
-      .innerJoin(
-        'organization',
-        'organization.organizationId',
-        'channel.organizationId',
-      )
-      .where('channel.channelId', '=', channelId)
-      .where('organization.ownerId', '=', agentId)
-      .executeTakeFirst();
-
-    if (!channelAuth) {
-      throw new BadRequestException({
-        message: 'Insufficient access',
-        code: 'INSUFFICIENT_ACCESS',
-      });
-    }
-
-    await this.db
+  async deleteAccountById(channelId: UUID) {
+    const channel = await this.db
       .deleteFrom('channel')
       .where('channel.channelId', '=', channelId)
+      .returning(['channel.channelId'])
       .execute();
+
+    if (!channel) {
+      throw new BadRequestException({
+        message: 'Invalid Channel',
+        code: 'INVALID_CHANNEL',
+      });
+    }
   }
 
   verifySHA256(body: string, signature: string, secret: string) {
@@ -86,6 +61,7 @@ export class ChannelService {
       message,
       channelType,
       customerName,
+      agentId,
     } = data;
 
     try {
@@ -179,6 +155,7 @@ export class ChannelService {
                 channelId,
                 channelCustomerId,
                 ticketStatus: 'open',
+                agentId,
               })
               .returning([
                 'ticket.ticketId',
@@ -251,6 +228,7 @@ export class ChannelService {
               messageContent: channelMessage,
               unread: 1,
               messageStatus: 'received',
+              ticketStatus: 'close',
             } satisfies NewTicketResponseDTO;
 
             agents.forEach(({ agentId }) =>

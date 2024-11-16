@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
-import { Database } from 'src/database/database';
+
+import { Database } from '@database/database';
 
 @Injectable()
 export class TeamService {
@@ -31,11 +32,10 @@ export class TeamService {
       .execute();
   }
 
-  async deleteTeam(teamId: UUID, orgId: UUID) {
+  async deleteTeam(teamId: UUID) {
     const response = await this.db
       .deleteFrom('team')
       .where('team.teamId', '=', teamId)
-      .where('team.organizationId', '=', orgId)
       .returning(['team.teamId'])
       .executeTakeFirst();
 

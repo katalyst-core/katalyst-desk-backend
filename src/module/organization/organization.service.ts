@@ -1,16 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 
-import { Database } from 'src/database/database';
+import { Database } from '@database/database';
+
 import { NewOrganizationDTO } from './dto/new-organization-dto';
-import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class OrganizationService {
-  constructor(
-    private readonly db: Database,
-    private readonly util: UtilService,
-  ) {}
+  constructor(private readonly db: Database) {}
 
   async createOrganization(agentId: UUID, data: NewOrganizationDTO) {
     return this.db.transaction().execute(async (tx) => {

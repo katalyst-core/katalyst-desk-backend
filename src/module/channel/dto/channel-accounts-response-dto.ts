@@ -1,8 +1,8 @@
 import { Expose } from 'class-transformer';
 import { UUID } from 'crypto';
 
-import { ShortenUUID } from 'src/common/decorator/class-transformer';
-import { ResponseDTO } from 'src/common/dto/response-dto';
+import { ShortenUUID } from '@decorator/class-transformer';
+import { ResponseDTO } from '@dto/response-dto';
 
 export class ChannelAccountsResponseDTO extends ResponseDTO {
   @ShortenUUID()

@@ -8,9 +8,10 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
-import { ApiConfigService } from 'src/config/api-config.service';
-import { Database } from 'src/database/database';
-import { UtilService } from 'src/util/util.service';
+import { ApiConfigService } from '@config/api-config.service';
+import { Database } from '@database/database';
+import { UtilService } from '@util/util.service';
+
 import { AgentRefresh, AgentRefreshJWT } from '../auth.type';
 
 @Injectable()

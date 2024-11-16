@@ -1,32 +1,23 @@
-import {
-  Body,
-  ClassSerializerInterceptor,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
 import { UUID } from 'crypto';
-import { Request } from 'express';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 
+import { PermGuard } from '@decorator/route';
+import { AccessLevel } from '@util/guard.type';
+import { TeamService } from '@module/team/team.service';
+import { TableOptionsDTO } from '@util/dto/table-options-dto';
+import { PermLevel, Agent, ParamUUID } from '@decorator/param';
+import { CreateTeamDTO } from '@module/team/dto/create-team-dto';
+import { TeamsResponseDTO } from '@module/team/dto/teams-response-dto';
+
+import { TicketService } from '../ticket/ticket.service';
 import { OrganizationService } from './organization.service';
 import { NewOrganizationDTO } from './dto/new-organization-dto';
 import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
-import { AgentAccess } from '../auth/auth.type';
-import { UtilService } from 'src/util/util.service';
 import { TicketsResponseDTO } from '../ticket/dto/tickets-response-dto';
-import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
-import { TicketService } from '../ticket/ticket.service';
-import { Agent, ParamUUID } from 'src/common/decorator/param';
-import { GuardService } from 'src/util/guard.service';
-import { TeamService } from '../team/team.service';
-import { TeamsResponseDTO } from '../team/dto/teams-response-dto';
-import { CreateTeamDTO } from '../team/dto/create-team-dto';
+import { NewOrganizationResponseDTO } from './dto/new-organization-response-dto';
+import { OrganizationInfoResponseDTO } from './dto/organization-info-response-dto';
+import { ChannelService } from '@module/channel/channel.service';
+import { ChannelAccountsResponseDTO } from '@module/channel/dto/channel-accounts-response-dto';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
@@ -35,63 +26,68 @@ export class OrganizationController {
     private readonly orgService: OrganizationService,
     private readonly ticketService: TicketService,
     private readonly teamService: TeamService,
-    private readonly guard: GuardService,
+    private readonly channelService: ChannelService,
   ) {}
 
   @Post('create')
   async createOrganization(
-    @Req() req: Request,
-    @Body() data: NewOrganizationDTO,
+    @Agent() agentId: UUID,
+    @Body() body: NewOrganizationDTO,
   ) {
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
-    const newOrg = await this.orgService.createOrganization(agentId, data);
-
-    const { organizationId } = newOrg;
-    const response = {
-      organization_id: UtilService.shortenUUID(organizationId),
-    };
+    const data = await this.orgService.createOrganization(agentId, body);
 
     return {
       code: 201,
       message: 'Created new organization',
-      data: response,
+      data,
+      options: {
+        dto: NewOrganizationResponseDTO,
+      },
     };
   }
 
-  @UseInterceptors(ClassSerializerInterceptor)
-  @Get('/:id/info')
-  async getOrganizationById(@ParamUUID('id') orgId: UUID) {
-    const organization = await this.orgService.getOrganizationById(orgId);
-
-    const { name } = organization;
-    const response = {
-      organization_id: orgId,
-      name,
-    };
+  @PermGuard('organization.info')
+  @Get('/:orgId/info')
+  async getOrganizationInfo(@ParamUUID('orgId') orgId: UUID) {
+    const data = await this.orgService.getOrganizationById(orgId);
 
     return {
       code: 200,
       message: 'Successfully retrieved organization info',
-      data: response,
+      data,
+      options: {
+        dto: OrganizationInfoResponseDTO,
+      },
     };
   }
 
-  @Get('/:id/tickets')
+  @PermGuard('channel.list')
+  @Get('/:orgId/channels')
+  async getChannels(@ParamUUID('orgId') orgId: UUID) {
+    const accounts = await this.channelService.getChannelAccountsByOrgId(orgId);
+
+    return {
+      code: 200,
+      message: 'Successfully retrieved channel accounts',
+      data: accounts,
+      options: {
+        dto: ChannelAccountsResponseDTO,
+      },
+    };
+  }
+
+  @PermGuard('ticket.list')
+  @Get('/:orgId/tickets')
   async getTickets(
-    @Req() req: Request,
-    @Param('id') orgShortId: string,
+    @Agent() agentId: UUID,
+    @ParamUUID('orgId') orgId: UUID,
+    @PermLevel() accessLevel: AccessLevel,
     @Query() tableOptions: TableOptionsDTO,
   ) {
-    const orgId = UtilService.restoreUUID(orgShortId);
-
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
     const tickets = await this.ticketService.getTicketsByOrgId(
       orgId,
       agentId,
+      accessLevel,
       tableOptions,
     );
 
@@ -103,30 +99,12 @@ export class OrganizationController {
     };
   }
 
-  @Get('/:id/teams')
-  async getTeams(@Agent() agentId: UUID, @ParamUUID('id') orgId: UUID) {
-    await this.guard.hasAccessTo('team.list', agentId, orgId);
-
-    const data = await this.teamService.getTeamsByOrganizationId(orgId);
-
-    return {
-      code: 200,
-      message: 'Successfully retrieved teams',
-      data,
-      options: {
-        dto: TeamsResponseDTO,
-      },
-    };
-  }
-
-  @Post('/:id/team')
+  @PermGuard('team.create')
+  @Post('/:orgId/team')
   async createTeam(
-    @Agent() agentId,
-    @ParamUUID('id') orgId: UUID,
+    @ParamUUID('orgId') orgId: UUID,
     @Body() body: CreateTeamDTO,
   ) {
-    await this.guard.hasAccessTo('team.create', agentId, orgId);
-
     const { name } = body;
 
     await this.teamService.createTeam(name, orgId);
@@ -137,19 +115,18 @@ export class OrganizationController {
     };
   }
 
-  @Delete('/:orgId/team/:teamId')
-  async deleteTeam(
-    @Agent() agentId,
-    @ParamUUID('orgId') orgId: UUID,
-    @ParamUUID('teamId') teamId: UUID,
-  ) {
-    await this.guard.hasAccessTo('team.delete', agentId, orgId);
-
-    await this.teamService.deleteTeam(teamId, orgId);
+  @PermGuard('team.list')
+  @Get('/:orgId/teams')
+  async getTeams(@ParamUUID('orgId') orgId: UUID) {
+    const data = await this.teamService.getTeamsByOrganizationId(orgId);
 
     return {
       code: 200,
-      message: 'Successfully deleted team',
+      message: 'Successfully retrieved teams',
+      data,
+      options: {
+        dto: TeamsResponseDTO,
+      },
     };
   }
 }

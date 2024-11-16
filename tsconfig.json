@@ -16,6 +16,19 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@decorator/*": ["src/common/decorator/*"],
+      "@dto/*": ["src/common/dto/*"],
+      "@exception/*": ["src/common/exception/*"],
+      "@filter/*": ["src/common/filter/*"],
+      "@guard/*": ["src/common/guard/*"],
+      "@interceptor/*": ["src/common/interceptor/*"],
+      "@util/*": ["src/util/*"],
+      "@database/*": ["src/database/*"],
+      "@module/*": ["src/module/*"],
+      "@websocket/*": ["src/websocket/*"],
+      "@config/*": ["src/config/*"]
+    }
   }
 }

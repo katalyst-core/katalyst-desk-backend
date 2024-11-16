@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { FacebookAPI } from './facebook.api';
 import { HttpModule } from '@nestjs/axios';
+
+import { FacebookAPI } from './facebook.api';
 
 @Module({
   imports: [HttpModule],

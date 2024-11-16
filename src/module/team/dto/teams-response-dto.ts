@@ -1,7 +1,8 @@
 import { Expose } from 'class-transformer';
 import { UUID } from 'crypto';
-import { ShortenUUID } from 'src/common/decorator/class-transformer';
-import { ResponseDTO } from 'src/common/dto/response-dto';
+
+import { ShortenUUID } from '@decorator/class-transformer';
+import { ResponseDTO } from '@dto/response-dto';
 
 export class TeamsResponseDTO extends ResponseDTO {
   @ShortenUUID()
@@ -15,5 +16,5 @@ export class TeamsResponseDTO extends ResponseDTO {
   timestamp: string;
 
   @Expose({ name: 'total_agent' })
-  totalAgent;
+  totalAgent: number;
 }

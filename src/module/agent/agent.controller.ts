@@ -1,53 +1,43 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { UUID } from 'crypto';
 
-import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
-import { AgentAccess } from '../auth/auth.type';
+import { Agent } from '@decorator/param';
+import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
+
 import { AgentService } from './agent.service';
-import { UtilService } from 'src/util/util.service';
+import { AgentInfoResponseDTO } from './dto/agent-info-response-dto';
+import { OrganizationsResponseDTO } from './dto/organizations-response-dto';
 
 @UseGuards(JWTAccess)
 @Controller('agent')
 export class AgentController {
-  constructor(
-    private readonly util: UtilService,
-    private readonly agentService: AgentService,
-  ) {}
+  constructor(private readonly agentService: AgentService) {}
 
   @Get('info')
-  async getAgentInfo(@Req() req: Request) {
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
+  async getAgentInfo(@Agent() agentId: UUID) {
     const data = await this.agentService.getAgentInfo(agentId);
 
     return {
       code: 200,
       message: 'Successfully retrieved agent info',
       data,
+      options: {
+        dto: AgentInfoResponseDTO,
+      },
     };
   }
 
   @Get('organizations')
-  async getOrganizations(@Req() req: Request) {
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
-    const orgs = await this.agentService.getOrganizationsByAgentId(agentId);
-
-    const response = orgs.map((org) => {
-      const { organizationId, name } = org;
-
-      return {
-        organization_id: UtilService.shortenUUID(organizationId),
-        name,
-      };
-    });
+  async getOrganizations(@Agent() agentId: UUID) {
+    const data = await this.agentService.getOrganizationsByAgentId(agentId);
 
     return {
       code: 200,
       message: 'Successfully retrieved all organizations',
-      data: response,
+      data: data,
+      options: {
+        dto: OrganizationsResponseDTO,
+      },
     };
   }
 }

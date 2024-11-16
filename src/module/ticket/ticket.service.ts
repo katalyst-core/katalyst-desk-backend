@@ -1,11 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
-import { Database } from 'src/database/database';
-import { TableOptionsDTO } from 'src/util/dto/table-options-dto';
-import { UtilService } from 'src/util/util.service';
+
+import { Database } from '@database/database';
+import { AccessLevel } from '@util/guard.type';
+import { UtilService } from '@util/util.service';
+import { TableOptionsDTO } from '@util/dto/table-options-dto';
+
 import { ChannelService } from '../channel/channel.service';
-import { InstagramService } from '../channel/instagram/instagram.service';
 import { WhatsAppService } from '../channel/whatsapp/whatsapp.service';
+import { InstagramService } from '../channel/instagram/instagram.service';
 
 @Injectable()
 export class TicketService {
@@ -17,46 +20,12 @@ export class TicketService {
     private readonly whatsAppService: WhatsAppService,
   ) {}
 
-  async hasAccessToTicket(ticketId: UUID, agentId: UUID) {
-    const ticket = await this.db
-      .selectFrom('ticket')
-      .innerJoin(
-        'organization',
-        'organization.organizationId',
-        'ticket.organizationId',
-      )
-      .innerJoin(
-        'organizationAgent',
-        'organizationAgent.organizationId',
-        'organization.organizationId',
-      )
-      .where('organizationAgent.agentId', '=', agentId)
-      .where('ticket.ticketId', '=', ticketId)
-      .executeTakeFirst();
-
-    if (!ticket) {
-      throw new BadRequestException({
-        message: 'Agent does not have access to this ticket',
-        code: 'AGENT_INVALID_ACCESS',
-      });
-    }
-  }
-
-  async getTicketsByOrgId(orgId: UUID, agentId: UUID, ticketOptions) {
-    const org = await this.db
-      .selectFrom('organizationAgent')
-      .select(['organizationAgent.organizationId'])
-      .where('organizationAgent.agentId', '=', agentId)
-      .where('organizationAgent.organizationId', '=', orgId)
-      .executeTakeFirst();
-
-    if (!org) {
-      throw new BadRequestException({
-        message: 'Agent does not have access to this organization',
-        code: 'AGENT_INVALID_ACCESS',
-      });
-    }
-
+  async getTicketsByOrgId(
+    orgId: UUID,
+    agentId: UUID,
+    accessLevel: AccessLevel,
+    tableOptions,
+  ) {
     const ticketQuery = this.db
       .selectFrom('ticket')
       .innerJoin(
@@ -74,9 +43,13 @@ export class TicketService {
         'latestMessage.ticketId',
         'ticket.ticketId',
       )
+      .leftJoin('ticketAgent', 'ticketAgent.ticketId', 'ticket.ticketId')
+      .leftJoin('ticketTeam', 'ticketTeam.ticketId', 'ticket.ticketId')
+      .leftJoin('teamAgent', 'teamAgent.teamId', 'ticketTeam.teamId')
       .select(({ selectFrom }) => [
         'ticket.ticketId',
         'ticket.ticketCode',
+        'ticket.ticketStatus',
         'masterCustomer.customerName',
         'latestMessage.isCustomer',
         'latestMessage.messageStatus',
@@ -117,11 +90,23 @@ export class TicketService {
             .limit(1),
         ),
       )
+      .$if(accessLevel !== 'bypass', (qb) =>
+        qb.where((eb) =>
+          eb.or([
+            eb.and([
+              eb('ticketAgent.ticketId', 'is', null),
+              eb('ticketTeam.ticketId', 'is', null),
+            ]),
+            eb('ticketAgent.agentId', '=', agentId),
+            eb('teamAgent.agentId', '=', agentId),
+          ]),
+        ),
+      )
       .orderBy('latestMessage.createdAt', 'desc');
 
     const tickets = await this.util.executeWithTableOptions(
       ticketQuery,
-      ticketOptions,
+      tableOptions,
       (message) => {
         const { messageContent } = message;
         const channelMessage = this.channelService.transformRaw(messageContent);
@@ -137,34 +122,7 @@ export class TicketService {
   }
 
   // TODO: Move to messages folder
-  async getMessagesByTicketId(
-    ticketId: UUID,
-    userId: UUID,
-    tableOptions: TableOptionsDTO,
-  ) {
-    const ticket = await this.db
-      .selectFrom('ticket')
-      .innerJoin(
-        'organization',
-        'organization.organizationId',
-        'ticket.organizationId',
-      )
-      .innerJoin(
-        'organizationAgent',
-        'organizationAgent.organizationId',
-        'organization.organizationId',
-      )
-      .where('organizationAgent.agentId', '=', userId)
-      .where('ticket.ticketId', '=', ticketId)
-      .executeTakeFirst();
-
-    if (!ticket) {
-      throw new BadRequestException({
-        message: 'Agent does not have access to this ticket',
-        code: 'AGENT_INVALID_ACCESS',
-      });
-    }
-
+  async getMessagesByTicketId(ticketId: UUID, tableOptions: TableOptionsDTO) {
     const messagesQuery = this.db
       .selectFrom('ticketMessage')
       .select([
@@ -239,29 +197,18 @@ export class TicketService {
         'ticket.channelCustomerId',
       )
       .innerJoin('channel', 'channel.channelId', 'ticket.channelId')
-      .innerJoin(
-        'organization',
-        'organization.organizationId',
-        'ticket.organizationId',
-      )
-      .innerJoin(
-        'organizationAgent',
-        'organizationAgent.organizationId',
-        'organization.organizationId',
-      )
       .select([
         'channelCustomer.customerAccount',
         'channel.channelAccount',
         'channel.channelType',
       ])
       .where('ticket.ticketId', '=', ticketId)
-      .where('organizationAgent.agentId', '=', agentId)
       .executeTakeFirst();
 
     if (!ticket) {
       throw new BadRequestException({
-        message: 'Insufficient Access',
-        code: 'Insufficient Access',
+        message: 'Invalid Ticket',
+        code: 'INVALID_TICKET',
       });
     }
 
@@ -295,6 +242,7 @@ export class TicketService {
         senderId: channelAccount,
         recipientId: customerAccount,
         timestamp: new Date(Date.now()),
+        agentId,
       });
     } catch (err) {
       console.log(err);
@@ -338,10 +286,18 @@ export class TicketService {
   }
 
   async closeTicket(ticketId: UUID) {
-    await this.db
+    const ticket = await this.db
       .updateTable('ticket')
       .set({ ticketStatus: 'close' })
       .where('ticket.ticketId', '=', ticketId)
-      .execute();
+      .returning(['ticket.ticketId'])
+      .executeTakeFirst();
+
+    if (!ticket) {
+      throw new BadRequestException({
+        message: 'Invalid Ticket',
+        code: 'INVALID_TICKET',
+      });
+    }
   }
 }

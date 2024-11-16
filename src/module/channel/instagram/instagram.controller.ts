@@ -9,14 +9,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { UUID } from 'crypto';
+
+import { Agent } from '@decorator/param';
+import { GuardService } from '@util/guard.service';
+import { ApiConfigService } from '@config/api-config.service';
+import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
 
 import { InstagramWebhookSchema } from './instagram.schema';
 import { InstagramService } from './instagram.service';
 import { InstagramCodeDTO } from './dto/instagram-code-dto';
 import { ChannelService } from '../channel.service';
-import { ApiConfigService } from 'src/config/api-config.service';
-import { JWTAccess } from 'src/module/auth/strategy/jwt-access.strategy';
-import { AgentAccess } from 'src/module/auth/auth.type';
 
 @Controller('channel/instagram')
 export class InstagramController {
@@ -24,6 +27,7 @@ export class InstagramController {
     private readonly config: ApiConfigService,
     private readonly instagramService: InstagramService,
     private readonly channelService: ChannelService,
+    private readonly guard: GuardService,
   ) {}
 
   @All('webhook')
@@ -69,13 +73,23 @@ export class InstagramController {
 
   @UseGuards(JWTAccess)
   @Post('auth')
-  async auth(@Req() req: Request, @Body() data: InstagramCodeDTO) {
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
+  async auth(@Agent() agentId: UUID, @Body() data: InstagramCodeDTO) {
+    const { code, organization_id: orgId } = data;
 
-    const { code, organization_id: organizationId } = data;
+    const hasAccess = await this.guard.hasAccessToOrganization(
+      'channel.register.instagram',
+      agentId,
+      orgId,
+    );
 
-    await this.instagramService.authChannel(code, agentId, organizationId);
+    if (!hasAccess) {
+      throw new UnauthorizedException({
+        message: 'Invalid Access',
+        code: 'INVALID_ACCESS',
+      });
+    }
+
+    await this.instagramService.authenticateChannel(code, orgId);
 
     return {
       code: 200,

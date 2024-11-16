@@ -1,19 +1,18 @@
 import { Transform } from 'class-transformer';
 import { IsUUID } from 'class-validator';
-import { UtilService } from 'src/util/util.service';
 
-export function ShortenUUID() {
-  return Transform(({ value }) => {
+import { UtilService } from '@util/util.service';
+
+export const ShortenUUID = () =>
+  Transform(({ value }) => {
     if (!value || !IsUUID(value)) {
       return value;
     }
 
     return UtilService.shortenUUID(value);
   });
-}
 
-export function RestoreUUID() {
-  return Transform(({ value }) => {
+export const RestoreUUID = () =>
+  Transform(({ value }) => {
     return UtilService.restoreUUID(value);
   });
-}

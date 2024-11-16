@@ -316,3 +316,47 @@ export const channel = pgTable(
     }).onDelete('restrict'),
   ],
 );
+
+export const ticketAgent = pgTable(
+  'ticket_agent',
+  {
+    ticketId: uuid('ticket_id').notNull(),
+    agentId: uuid('agent_id').notNull(),
+    ...AuditFields,
+  },
+  (t) => [
+    primaryKey({ name: 'pk_ticket_agent', columns: [t.ticketId, t.agentId] }),
+    foreignKey({
+      name: 'fk_ticket_id',
+      columns: [t.ticketId],
+      foreignColumns: [ticket.ticketId],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'fk_agent_id',
+      columns: [t.agentId],
+      foreignColumns: [agent.agentId],
+    }).onDelete('cascade'),
+  ],
+);
+
+export const ticketTeam = pgTable(
+  'ticket_team',
+  {
+    ticketId: uuid('ticket_id').notNull(),
+    teamId: uuid('team_id').notNull(),
+    ...AuditFields,
+  },
+  (t) => [
+    primaryKey({ name: 'pk_ticket_team', columns: [t.ticketId, t.teamId] }),
+    foreignKey({
+      name: 'fk_ticket_id',
+      columns: [t.ticketId],
+      foreignColumns: [ticket.ticketId],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'fk_team_id',
+      columns: [t.teamId],
+      foreignColumns: [team.teamId],
+    }).onDelete('cascade'),
+  ],
+);

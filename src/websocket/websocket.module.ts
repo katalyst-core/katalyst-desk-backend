@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
+import { BaseGateway } from './base.gateway';
 import { WebsocketGateway } from './websocket.gateway';
 import { WebsocketService } from './websocket.service';
-import { BaseGateway } from './base.gateway';
 
 @Module({
   imports: [JwtModule.register({})],

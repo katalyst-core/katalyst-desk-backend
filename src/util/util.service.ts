@@ -1,15 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UUID } from 'crypto';
 import { SelectQueryBuilder, Simplify, sql } from 'kysely';
+import { instanceToPlain } from 'class-transformer';
 import { customAlphabet } from 'nanoid';
 import { v7 as uuidv7 } from 'uuid';
 import * as short from 'short-uuid';
+import { UUID } from 'crypto';
 
-import { Database } from 'src/database/database';
+import { Database } from '@database/database';
+import { ResponseDTO } from '@dto/response-dto';
+import { PaginatedResponseDTO } from '@dto/paginated-dto';
+
 import { TableOptionsDTO } from './dto/table-options-dto';
-import { instanceToPlain } from 'class-transformer';
-import { ResponseDTO } from 'src/common/dto/response-dto';
-import { PaginatedResponseDTO } from 'src/common/dto/paginated-dto';
 
 @Injectable()
 export class UtilService {
@@ -18,18 +19,6 @@ export class UtilService {
 
   constructor(private readonly db: Database) {}
 
-  generateToken(length: number): string {
-    return customAlphabet(this.defaultString, length)();
-  }
-
-  generatePublicId(): string {
-    return this.generateToken(16);
-  }
-
-  generateUUID(): UUID {
-    return uuidv7();
-  }
-
   static shortenUUID(value: UUID): string {
     try {
       return this.translator.fromUUID(value);
@@ -37,8 +26,8 @@ export class UtilService {
       // console.log(err);
       void err;
       throw new BadRequestException({
-        message: 'Invalid request',
-        code: 'INVALID_REQUEST',
+        message: 'Invalid ID',
+        code: 'INVALID_ID',
       });
     }
   }
@@ -50,8 +39,8 @@ export class UtilService {
       // console.log(err);
       void err;
       throw new BadRequestException({
-        message: 'Invalid request',
-        code: 'INVALID_REQUEST',
+        message: 'Invalid ID',
+        code: 'INVALID_ID',
       });
     }
   }
@@ -78,6 +67,18 @@ export class UtilService {
     } else {
       return remap(data);
     }
+  }
+
+  generateToken(length: number): string {
+    return customAlphabet(this.defaultString, length)();
+  }
+
+  generatePublicId(): string {
+    return this.generateToken(16);
+  }
+
+  generateUUID(): UUID {
+    return uuidv7();
   }
 
   isValidName(name: string) {
