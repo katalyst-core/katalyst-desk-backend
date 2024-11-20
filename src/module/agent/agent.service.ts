@@ -99,20 +99,35 @@ export class AgentService {
 
   async removeAgentFromOrganization(orgId: UUID, agentId: UUID) {
     // TODO: Remove associated organizations
+    await this.db.transaction().execute(async (tx) => {
+      await tx
+        .deleteFrom('teamAgent')
+        .where(({ eb, selectFrom }) =>
+          eb(
+            'teamAgent.teamId',
+            'in',
+            selectFrom('team')
+              .select(['team.teamId'])
+              .where('team.organizationId', '=', orgId),
+          ),
+        )
+        .where('teamAgent.agentId', '=', agentId)
+        .execute();
 
-    const orgAgent = await this.db
-      .deleteFrom('organizationAgent')
-      .where('organizationAgent.agentId', '=', agentId)
-      .where('organizationAgent.organizationId', '=', orgId)
-      .returning(['organizationAgent.agentId'])
-      .executeTakeFirst();
+      const orgAgent = await tx
+        .deleteFrom('organizationAgent')
+        .where('organizationAgent.agentId', '=', agentId)
+        .where('organizationAgent.organizationId', '=', orgId)
+        .returning(['organizationAgent.agentId'])
+        .executeTakeFirst();
 
-    if (!orgAgent) {
-      throw new BadRequestException({
-        message: `Agent doesn't exist`,
-        code: 'NO_AGENT',
-      });
-    }
+      if (!orgAgent) {
+        throw new BadRequestException({
+          message: `Agent doesn't exist`,
+          code: 'NO_AGENT',
+        });
+      }
+    });
   }
 
   async assignTeam(agentId: UUID, teamId: UUID) {
