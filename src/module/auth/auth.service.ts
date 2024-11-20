@@ -4,9 +4,9 @@ import { UUID } from 'crypto';
 import { CookieOptions } from 'express';
 import * as bcrypt from 'bcrypt';
 
-import { ApiConfigService } from '@config/api-config.service';
 import { Database } from '@database/database';
-import { UtilService } from '@util/util.service';
+import { ApiConfigService } from '@config/api-config.service';
+import { generateUUID, restoreUUID, shortenUUID } from '@util/.';
 
 import { NewAgentDTO } from './dto/new-agent-dto';
 import { AgentAccessJWT, AgentGatewayJWT, AgentRefreshJWT } from './auth.type';
@@ -15,7 +15,6 @@ import { AgentAccessJWT, AgentGatewayJWT, AgentRefreshJWT } from './auth.type';
 export class AuthService {
   constructor(
     private readonly db: Database,
-    private readonly util: UtilService,
     private readonly config: ApiConfigService,
     private readonly jwt: JwtService,
   ) {}
@@ -62,7 +61,7 @@ export class AuthService {
   }
 
   createAccessToken(agentId: UUID) {
-    const shortAgentId = UtilService.shortenUUID(agentId);
+    const shortAgentId = shortenUUID(agentId);
 
     const payload = {
       sub: shortAgentId,
@@ -95,7 +94,7 @@ export class AuthService {
       });
     }
 
-    const newSessionToken = this.util.generateUUID();
+    const newSessionToken = generateUUID();
 
     try {
       if (oldSessionToken) {
@@ -118,8 +117,8 @@ export class AuthService {
           .executeTakeFirst();
       }
 
-      const shortAgentId = UtilService.shortenUUID(agentId);
-      const shortSessionToken = UtilService.shortenUUID(newSessionToken);
+      const shortAgentId = shortenUUID(agentId);
+      const shortSessionToken = shortenUUID(newSessionToken);
 
       const payload = {
         sub: shortAgentId,
@@ -167,8 +166,8 @@ export class AuthService {
 
       const { sub: shortAgentId, session_token: shortSessionToken } =
         decodedToken;
-      const agentId = UtilService.restoreUUID(shortAgentId);
-      const sessionToken = UtilService.restoreUUID(shortSessionToken);
+      const agentId = restoreUUID(shortAgentId);
+      const sessionToken = restoreUUID(shortSessionToken);
 
       await this.db
         .deleteFrom('agentSession')
@@ -181,7 +180,7 @@ export class AuthService {
   }
 
   createGatewayToken(agentId: UUID, ip: string) {
-    const shortAgentId = UtilService.shortenUUID(agentId);
+    const shortAgentId = shortenUUID(agentId);
 
     const payload = {
       sub: shortAgentId,

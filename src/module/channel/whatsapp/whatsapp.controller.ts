@@ -12,7 +12,7 @@ import { Request, Response } from 'express';
 import { UUID } from 'crypto';
 
 import { Agent } from '@decorator/param';
-import { GuardService } from '@util/guard.service';
+import { GuardService } from 'src/guard/guard.service';
 import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
 
 import { WhatsAppService } from './whatsapp.service';

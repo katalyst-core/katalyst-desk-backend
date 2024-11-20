@@ -2,19 +2,18 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 
 import { Database } from '@database/database';
-import { AccessLevel } from '@util/guard.type';
-import { UtilService } from '@util/util.service';
+import { AccessLevel } from '@guard/guard.type';
+import { executeWithTableOptions } from '@util/.';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
 
-import { ChannelService } from '../channel/channel.service';
-import { WhatsAppService } from '../channel/whatsapp/whatsapp.service';
-import { InstagramService } from '../channel/instagram/instagram.service';
+import { ChannelService } from '@module/channel/channel.service';
+import { WhatsAppService } from '@module/channel/whatsapp/whatsapp.service';
+import { InstagramService } from '@module/channel/instagram/instagram.service';
 
 @Injectable()
 export class TicketService {
   constructor(
     private readonly db: Database,
-    private readonly util: UtilService,
     private readonly channelService: ChannelService,
     private readonly instagramService: InstagramService,
     private readonly whatsAppService: WhatsAppService,
@@ -104,10 +103,8 @@ export class TicketService {
       )
       .orderBy('latestMessage.createdAt', 'desc');
 
-    const tickets = await this.util.executeWithTableOptions(
-      ticketQuery,
-      tableOptions,
-      (message) => {
+    const tickets = await executeWithTableOptions(ticketQuery, tableOptions, {
+      transform: (message) => {
         const { messageContent } = message;
         const channelMessage = this.channelService.transformRaw(messageContent);
 
@@ -116,7 +113,7 @@ export class TicketService {
           messageContent: channelMessage,
         };
       },
-    );
+    });
 
     return tickets;
   }
@@ -135,17 +132,20 @@ export class TicketService {
       .where('ticketMessage.ticketId', '=', ticketId)
       .orderBy('ticketMessage.createdAt', 'desc');
 
-    const messages = await this.util.executeWithTableOptions(
+    const messages = await executeWithTableOptions(
       messagesQuery,
       tableOptions,
-      (message) => {
-        const { messageContent } = message;
-        const channelMessage = this.channelService.transformRaw(messageContent);
+      {
+        transform: (message) => {
+          const { messageContent } = message;
+          const channelMessage =
+            this.channelService.transformRaw(messageContent);
 
-        return {
-          ...message,
-          messageContent: channelMessage,
-        };
+          return {
+            ...message,
+            messageContent: channelMessage,
+          };
+        },
       },
     );
 

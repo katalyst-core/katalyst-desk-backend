@@ -2,14 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomUUID, UUID } from 'crypto';
 import * as crypto from 'crypto';
 
-import { ChannelMessage, RegisterMessage } from './channel.type';
-import { Database } from 'src/database/database';
-import { InstagramMessageSchema } from './instagram/instagram.schema';
-import { UtilService } from 'src/util/util.service';
+import { shortenUUID } from '@util/.';
+import { Database } from '@database/database';
+
 import { ChannelGateway } from './channel.gateway';
-import { TicketMessageResponseDTO } from './dto/ticket-message-response-dto';
-import { NewTicketResponseDTO } from './dto/new-ticket-response-dto';
+import { ChannelMessage, RegisterMessage } from './channel.type';
 import { WhatsAppMessageSchema } from './whatsapp/whatsapp.schema';
+import { NewTicketResponseDTO } from './dto/new-ticket-response-dto';
+import { InstagramMessageSchema } from './instagram/instagram.schema';
+import { TicketMessageResponseDTO } from './dto/ticket-message-response-dto';
 
 @Injectable()
 export class ChannelService {
@@ -142,7 +143,7 @@ export class ChannelService {
             }
 
             // TODO: Replace with a proper ticket code
-            const ticketCode = UtilService.shortenUUID(randomUUID());
+            const ticketCode = shortenUUID(randomUUID());
             const { organizationId, channelId } = channel;
             const { channelCustomerId } = channelCustomer;
 

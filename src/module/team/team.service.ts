@@ -18,7 +18,7 @@ export class TeamService {
         fn.count<number>('teamAgent.agentId').as('totalAgent'),
       ])
       .where('team.organizationId', '=', orgId)
-      .groupBy('team.teamId')
+      .groupBy(['team.teamId', 'team.name', 'timestamp'])
       .execute();
   }
 
@@ -45,5 +45,19 @@ export class TeamService {
         message: 'Unable to find team',
       });
     }
+  }
+
+  async getUnassignedTeamsByAgentId(orgId: UUID, agentId: UUID) {
+    return await this.db
+      .selectFrom('team')
+      .leftJoin('teamAgent', (join) =>
+        join
+          .onRef('teamAgent.teamId', '=', 'team.teamId')
+          .on('teamAgent.agentId', '=', agentId),
+      )
+      .select(['team.teamId', 'team.name'])
+      .where('teamAgent.agentId', 'is', null)
+      .where('team.organizationId', '=', orgId)
+      .execute();
   }
 }

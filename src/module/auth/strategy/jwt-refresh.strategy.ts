@@ -8,9 +8,9 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
-import { ApiConfigService } from '@config/api-config.service';
+import { restoreUUID } from '@util/.';
 import { Database } from '@database/database';
-import { UtilService } from '@util/util.service';
+import { ApiConfigService } from '@config/api-config.service';
 
 import { AgentRefresh, AgentRefreshJWT } from '../auth.type';
 
@@ -36,8 +36,8 @@ export class JWTRefreshStrategy extends PassportStrategy(
   async validate(_request: Request, payload: AgentRefreshJWT) {
     const { sub: shortAgentId, session_token: shortSessionId } = payload;
 
-    const agentId = UtilService.restoreUUID(shortAgentId);
-    const sessionToken = UtilService.restoreUUID(shortSessionId);
+    const agentId = restoreUUID(shortAgentId);
+    const sessionToken = restoreUUID(shortSessionId);
 
     const agent = await this.db
       .selectFrom('agentSession')

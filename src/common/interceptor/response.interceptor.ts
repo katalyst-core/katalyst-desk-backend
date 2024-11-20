@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator'
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 
-import { UtilService } from '@util/util.service';
+import { transformDTO } from '@util/index';
 
 export interface Response {
   status: number;
@@ -32,9 +32,7 @@ export class ResponseInterceptor implements NestInterceptor {
           status || context.switchToHttp().getResponse().statusCode;
 
         // Serialize content with DTO if it exists
-        const newContent = dto
-          ? UtilService.TransformDTO(content, dto)
-          : content || null;
+        const newContent = dto ? transformDTO(content, dto) : content || null;
 
         return {
           status: newStatus,

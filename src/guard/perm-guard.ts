@@ -5,10 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { restoreUUID } from '@util/index';
 import { AgentAccess } from '@module/auth/auth.type';
-import { GuardService } from '@util/guard.service';
-import { GuardAccess } from '@util/guard.type';
-import { UtilService } from '@util/util.service';
+import { GuardAccess } from '@guard/guard.type';
+import { GuardService } from '@guard/guard.service';
 
 export type PermGuardOptions = {
   paramName?: {
@@ -42,7 +42,7 @@ export const PermGuardConstructor = (
 
       let accessGuard: GuardAccess | null = null;
       if (ticketIdParam) {
-        const _ticketId = UtilService.restoreUUID(ticketIdParam);
+        const _ticketId = restoreUUID(ticketIdParam);
         accessGuard = await this.guard.hasAccessToTicket(
           permission,
           agentId,
@@ -51,7 +51,7 @@ export const PermGuardConstructor = (
       }
 
       if (orgIdParam) {
-        const _orgId = UtilService.restoreUUID(orgIdParam);
+        const _orgId = restoreUUID(orgIdParam);
         accessGuard = await this.guard.hasAccessToOrganization(
           permission,
           agentId,
@@ -60,7 +60,7 @@ export const PermGuardConstructor = (
       }
 
       if (channelIdParam) {
-        const _channelId = UtilService.restoreUUID(channelIdParam);
+        const _channelId = restoreUUID(channelIdParam);
         accessGuard = await this.guard.hasAccessToChannel(
           permission,
           agentId,
@@ -69,7 +69,7 @@ export const PermGuardConstructor = (
       }
 
       if (teamIdParam) {
-        const _teamId = UtilService.restoreUUID(teamIdParam);
+        const _teamId = restoreUUID(teamIdParam);
         accessGuard = await this.guard.hasAccessToTeam(
           permission,
           agentId,

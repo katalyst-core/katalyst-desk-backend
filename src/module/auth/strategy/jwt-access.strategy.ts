@@ -8,8 +8,8 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 
+import { restoreUUID } from '@util/index';
 import { ApiConfigService } from '@config/api-config.service';
-import { UtilService } from '@util/util.service';
 
 import { AgentAccess, AgentAccessJWT } from '../auth.type';
 
@@ -29,7 +29,7 @@ export class JWTAccessStrategy extends PassportStrategy(
 
   async validate(_request: Request, payload: AgentAccessJWT) {
     const { sub: shortAgentId } = payload;
-    const agentId = UtilService.restoreUUID(shortAgentId);
+    const agentId = restoreUUID(shortAgentId);
 
     return {
       agentId,

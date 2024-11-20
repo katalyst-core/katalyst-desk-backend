@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 
-import { UtilService } from '@util/util.service';
+import { restoreUUID } from '@util/.';
 import { AgentGatewayJWT } from '@module/auth/auth.type';
 import { ApiConfigService } from '@config/api-config.service';
 
@@ -65,7 +65,7 @@ export class WebsocketService {
       }
 
       const { sub: shortAgentId } = content;
-      const agentId = UtilService.restoreUUID(shortAgentId);
+      const agentId = restoreUUID(shortAgentId);
 
       return agentId;
     } catch (err) {

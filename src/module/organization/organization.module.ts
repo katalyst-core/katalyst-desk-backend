@@ -1,16 +1,18 @@
 import { forwardRef, Module } from '@nestjs/common';
 
+import { TeamModule } from '@module/team/team.module';
+import { AgentModule } from '@module/agent/agent.module';
+import { TicketModule } from '@module/ticket/ticket.module';
 import { ChannelModule } from '@module/channel/channel.module';
 
-import { TeamModule } from '../team/team.module';
-import { TicketModule } from '../ticket/ticket.module';
 import { OrganizationService } from './organization.service';
 import { OrganizationController } from './organization.controller';
 
 @Module({
   imports: [
-    forwardRef(() => TicketModule),
     forwardRef(() => TeamModule),
+    forwardRef(() => AgentModule),
+    forwardRef(() => TicketModule),
     forwardRef(() => ChannelModule),
   ],
   controllers: [OrganizationController],

@@ -1,8 +1,8 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+import { restoreUUID } from '@util/index';
 import { AgentAccess } from '@module/auth/auth.type';
-import { UtilService } from '@util/util.service';
-import type { AccessLevel } from '@util/guard.type';
+import type { AccessLevel } from '@guard/guard.type';
 
 export const Agent = createParamDecorator((_, ctx: ExecutionContext) => {
   const req = ctx.switchToHttp().getRequest();
@@ -15,7 +15,7 @@ export const ParamUUID = (param: string) =>
   createParamDecorator((_: unknown, ctx: ExecutionContext) => {
     const req = ctx.switchToHttp().getRequest();
     const shortUUID = req.params[param];
-    return UtilService.restoreUUID(shortUUID);
+    return restoreUUID(shortUUID);
   })();
 
 export const PermLevel = createParamDecorator((_, ctx: ExecutionContext) => {

@@ -1,7 +1,8 @@
 import { Transform } from 'class-transformer';
 import { IsUUID } from 'class-validator';
 
-import { UtilService } from '@util/util.service';
+import { restoreUUID, shortenUUID, transformDTO } from '@util/index';
+import { ResponseDTO } from '@dto/response-dto';
 
 export const ShortenUUID = () =>
   Transform(({ value }) => {
@@ -9,10 +10,11 @@ export const ShortenUUID = () =>
       return value;
     }
 
-    return UtilService.shortenUUID(value);
+    return shortenUUID(value);
   });
 
-export const RestoreUUID = () =>
-  Transform(({ value }) => {
-    return UtilService.restoreUUID(value);
-  });
+export const RestoreUUID = () => Transform(({ value }) => restoreUUID(value));
+
+export const TransformDTO = <T extends ResponseDTO = any>(dto: {
+  new (...args: any[]): T;
+}) => Transform(({ value }) => transformDTO(value, dto));

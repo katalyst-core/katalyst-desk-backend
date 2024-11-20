@@ -11,17 +11,17 @@ import {
 import { Request } from 'express';
 import { UUID } from 'crypto';
 
+import { restoreUUID } from '@util/.';
 import { PermGuard } from '@decorator/route';
 import { Agent, ParamUUID } from '@decorator/param';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
 
-import { AgentAccess } from '../auth/auth.type';
 import { TicketService } from './ticket.service';
-import { UtilService } from 'src/util/util.service';
 import { SendMessageDTO } from './dto/send-message-dto';
-import { JWTAccess } from '../auth/strategy/jwt-access.strategy';
 import { MessagesResponseDTO } from './dto/messages-response-dto';
 import { TicketDetailsResponseDTO } from './dto/ticket-details-response-dto';
+import { AgentAccess } from '@module/auth/auth.type';
+import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
 
 @UseGuards(JWTAccess)
 @Controller('/ticket')
@@ -51,7 +51,7 @@ export class TicketController {
   //TODO: Replace this later with read on agent send message
   @Post('/:id/read-messages')
   async readMessages(@Req() req: Request, @Param('id') ticketShortId: string) {
-    const ticketId = UtilService.restoreUUID(ticketShortId);
+    const ticketId = restoreUUID(ticketShortId);
 
     const user = req.user as AgentAccess;
     const { agentId } = user;

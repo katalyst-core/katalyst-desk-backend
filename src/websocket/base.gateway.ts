@@ -7,8 +7,8 @@ import {
 import { UUID } from 'crypto';
 import { Server } from 'socket.io';
 
+import { transformDTO } from '@util/.';
 import { ResponseDTO } from '@dto/response-dto';
-import { UtilService } from '@util/util.service';
 import { AllExceptionWsFilter } from '@filter/all-exception-ws.filter';
 
 import { WsTypes } from './websocket.type';
@@ -35,7 +35,7 @@ export class BaseGateway {
   ) {
     let _data: any = data;
     if (dto) {
-      _data = UtilService.TransformDTO(data, dto);
+      _data = transformDTO(data, dto);
     }
     this.server.to(`agent_${agentId}`).emit(type, _data);
   }

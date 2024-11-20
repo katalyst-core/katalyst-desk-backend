@@ -167,4 +167,26 @@ export class GuardService {
 
     return null;
   }
+
+  async isTeamInOrganization(orgId: UUID, teamId: UUID) {
+    const team = await this.db
+      .selectFrom('team')
+      .select(['team.teamId'])
+      .where('team.teamId', '=', teamId)
+      .where('team.organizationId', '=', orgId)
+      .executeTakeFirst();
+
+    return !!team;
+  }
+
+  async isAgentInOrganization(orgId: UUID, agentId: UUID) {
+    const agent = await this.db
+      .selectFrom('organizationAgent')
+      .select(['organizationAgent.agentId'])
+      .where('organizationAgent.agentId', '=', agentId)
+      .where('organizationAgent.organizationId', '=', orgId)
+      .executeTakeFirst();
+
+    return !!agent;
+  }
 }
