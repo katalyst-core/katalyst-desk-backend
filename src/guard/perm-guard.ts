@@ -20,7 +20,7 @@ export type PermGuardOptions = {
 };
 
 export const PermGuardConstructor = (
-  permission: string,
+  permissions: bigint[],
   options?: PermGuardOptions,
 ) => {
   @Injectable()
@@ -40,11 +40,11 @@ export const PermGuardConstructor = (
       const channelIdParam = params[paramNames?.channelId || 'channelId'];
       const teamIdParam = params[paramNames?.teamId || 'teamId'];
 
-      let accessGuard: GuardAccess | null = null;
+      let guardAccess: GuardAccess | null = null;
       if (ticketIdParam) {
         const _ticketId = restoreUUID(ticketIdParam);
-        accessGuard = await this.guard.hasAccessToTicket(
-          permission,
+        guardAccess = await this.guard.hasAccessToTicket(
+          permissions,
           agentId,
           _ticketId,
         );
@@ -52,8 +52,8 @@ export const PermGuardConstructor = (
 
       if (orgIdParam) {
         const _orgId = restoreUUID(orgIdParam);
-        accessGuard = await this.guard.hasAccessToOrganization(
-          permission,
+        guardAccess = await this.guard.hasAccessToOrganization(
+          permissions,
           agentId,
           _orgId,
         );
@@ -61,8 +61,8 @@ export const PermGuardConstructor = (
 
       if (channelIdParam) {
         const _channelId = restoreUUID(channelIdParam);
-        accessGuard = await this.guard.hasAccessToChannel(
-          permission,
+        guardAccess = await this.guard.hasAccessToChannel(
+          permissions,
           agentId,
           _channelId,
         );
@@ -70,15 +70,15 @@ export const PermGuardConstructor = (
 
       if (teamIdParam) {
         const _teamId = restoreUUID(teamIdParam);
-        accessGuard = await this.guard.hasAccessToTeam(
-          permission,
+        guardAccess = await this.guard.hasAccessToTeam(
+          permissions,
           agentId,
           _teamId,
         );
       }
 
-      if (accessGuard) {
-        req.accessLevel = accessGuard.accessLevel;
+      if (guardAccess) {
+        req.guardAccess = guardAccess;
         return true;
       }
 

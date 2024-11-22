@@ -12,6 +12,7 @@ import { Request, Response } from 'express';
 import { UUID } from 'crypto';
 
 import { Agent } from '@decorator/param';
+import { CHANNEL_MANAGE } from '@guard/permissions';
 import { GuardService } from 'src/guard/guard.service';
 import { ApiConfigService } from '@config/api-config.service';
 import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
@@ -77,7 +78,7 @@ export class InstagramController {
     const { code, organization_id: orgId } = data;
 
     const hasAccess = await this.guard.hasAccessToOrganization(
-      'channel.register.instagram',
+      [CHANNEL_MANAGE],
       agentId,
       orgId,
     );

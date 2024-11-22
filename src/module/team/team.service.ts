@@ -10,12 +10,12 @@ export class TeamService {
   async getTeamsByOrganizationId(orgId: UUID) {
     return await this.db
       .selectFrom('team')
-      .leftJoin('teamAgent', 'teamAgent.teamId', 'team.teamId')
+      .leftJoin('agentTeam', 'agentTeam.teamId', 'team.teamId')
       .select(({ fn }) => [
         'team.teamId',
         'team.name',
         'team.createdAt as timestamp',
-        fn.count<number>('teamAgent.agentId').as('totalAgent'),
+        fn.count<number>('agentTeam.agentId').as('totalAgent'),
       ])
       .where('team.organizationId', '=', orgId)
       .groupBy(['team.teamId', 'team.name', 'timestamp'])
@@ -50,13 +50,13 @@ export class TeamService {
   async getUnassignedTeamsByAgentId(orgId: UUID, agentId: UUID) {
     return await this.db
       .selectFrom('team')
-      .leftJoin('teamAgent', (join) =>
+      .leftJoin('agentTeam', (join) =>
         join
-          .onRef('teamAgent.teamId', '=', 'team.teamId')
-          .on('teamAgent.agentId', '=', agentId),
+          .onRef('agentTeam.teamId', '=', 'team.teamId')
+          .on('agentTeam.agentId', '=', agentId),
       )
       .select(['team.teamId', 'team.name'])
-      .where('teamAgent.agentId', 'is', null)
+      .where('agentTeam.agentId', 'is', null)
       .where('team.organizationId', '=', orgId)
       .execute();
   }

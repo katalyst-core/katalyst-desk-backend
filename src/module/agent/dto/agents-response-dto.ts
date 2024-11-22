@@ -13,6 +13,15 @@ class Team extends ResponseDTO {
   name: string;
 }
 
+class Role extends ResponseDTO {
+  @ShortenUUID()
+  @Expose({ name: 'role_id' })
+  role_id: UUID;
+
+  @Expose({ name: 'name' })
+  role_name: string;
+}
+
 export class AgentsResponseDTO extends ResponseDTO {
   @ShortenUUID()
   @Expose({ name: 'agent_id' })
@@ -27,6 +36,10 @@ export class AgentsResponseDTO extends ResponseDTO {
   @TransformDTO(Team)
   @Expose({ name: 'teams' })
   teams: Team[];
+
+  @TransformDTO(Role)
+  @Expose({ name: 'roles' })
+  roles: Role[];
 
   @Expose({ name: 'timestamp' })
   timestamp: Date;

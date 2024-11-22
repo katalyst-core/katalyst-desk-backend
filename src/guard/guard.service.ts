@@ -8,39 +8,56 @@ import { UUID } from 'crypto';
 import { Database } from '@database/database';
 
 import { GuardAccess } from './guard.type';
+import { toBigInt } from '@util/index';
 
 @Injectable()
 export class GuardService {
   constructor(private readonly db: Database) {}
 
-  async isOrganizationOwner(agentId: UUID, orgId: UUID) {
-    const org = await this.db
-      .selectFrom('organization')
-      .select(['organization.organizationId'])
-      .where('organization.organizationId', '=', orgId)
-      .where('organization.ownerId', '=', agentId)
-      .executeTakeFirst();
-
-    return !!org;
-  }
-
   async hasAccessToOrganization(
-    permission: string,
+    permissions: bigint[],
     agentId: UUID,
     orgId: UUID,
   ): Promise<GuardAccess | null> {
-    const isOrganizationOwner = await this.isOrganizationOwner(agentId, orgId);
-    if (isOrganizationOwner) return { accessLevel: 'bypass' };
+    const agent = await this.db
+      .selectFrom('organizationAgent')
+      .select(['organizationAgent.isOwner'])
+      .where('organizationAgent.organizationId', '=', orgId)
+      .where('organizationAgent.agentId', '=', agentId)
+      .executeTakeFirst();
 
-    // Check if agent has permission
-    void permission;
-    return { accessLevel: 'normal' };
+    if (!agent) return null;
+    if (agent.isOwner) return { isOwner: true };
+
+    const roles = await this.db
+      .selectFrom('role')
+      .leftJoin('agentRole', 'agentRole.roleId', 'role.roleId')
+      .select(['role.permission', 'agentRole.agentId'])
+      .where('role.organizationId', '=', orgId)
+      .where((eb) =>
+        eb.or([
+          eb('agentRole.agentId', '=', agentId),
+          eb('role.isDefault', '=', true),
+        ]),
+      )
+      .execute();
+
+    const agentPerm = roles.reduce(
+      (prev, curr) => prev | toBigInt(curr.permission),
+      BigInt('0'),
+    );
+
+    const validPerms = permissions.filter(
+      (perm) => perm == BigInt(0x0) || agentPerm & perm,
+    );
+
+    if (validPerms.length) return { permissions: validPerms };
 
     return null;
   }
 
   async hasAccessToTicket(
-    permission: string,
+    permissions: bigint[],
     agentId: UUID,
     ticketId: UUID,
   ): Promise<GuardAccess | null> {
@@ -57,18 +74,19 @@ export class GuardService {
       });
     }
 
-    const hasBypass = await this.hasAccessToOrganization(
-      'ticket.bypass',
-      agentId,
-      ticket.organizationId,
-    );
-    if (hasBypass) return { accessLevel: 'bypass' };
+    //TODO: Change bypass logic
+    // const hasBypass = await this.hasAccessToOrganization(
+    //   'ticket.bypass',
+    //   agentId,
+    //   ticket.organizationId,
+    // );
+    // if (hasBypass) return { accessLevel: 'bypass' };
 
     const hasTicketAccess = await this.db
       .selectFrom('ticket')
       .leftJoin('ticketAgent', 'ticketAgent.ticketId', 'ticket.ticketId')
       .leftJoin('ticketTeam', 'ticketTeam.ticketId', 'ticket.ticketId')
-      .leftJoin('teamAgent', 'teamAgent.teamId', 'ticketTeam.teamId')
+      .leftJoin('agentTeam', 'agentTeam.teamId', 'ticketTeam.teamId')
       .select(['ticket.ticketId'])
       .where('ticket.ticketId', '=', ticketId)
       .where((eb) =>
@@ -78,24 +96,24 @@ export class GuardService {
             eb('ticketTeam.ticketId', 'is', null),
           ]),
           eb('ticketAgent.agentId', '=', agentId),
-          eb('teamAgent.agentId', '=', agentId),
+          eb('agentTeam.agentId', '=', agentId),
         ]),
       )
       .executeTakeFirst();
 
     const hasAccess = await this.hasAccessToOrganization(
-      permission,
+      permissions,
       agentId,
       ticket.organizationId,
     );
 
-    if (hasTicketAccess && hasAccess) return { accessLevel: 'normal' };
+    if (hasTicketAccess) return hasAccess;
 
     return null;
   }
 
   async hasAccessToChannel(
-    permission: string,
+    permissions: bigint[],
     agentId: UUID,
     channelId: UUID,
   ): Promise<GuardAccess | null> {
@@ -114,25 +132,22 @@ export class GuardService {
 
     const { organizationId } = channel;
 
-    const hasBypass = await this.hasAccessToOrganization(
-      'channel.bypass',
+    // const hasBypass = await this.hasAccessToOrganization(
+    //   'channel.bypass',
+    //   agentId,
+    //   organizationId,
+    // );
+    // if (hasBypass) return { accessLevel: 'bypass' };
+
+    return await this.hasAccessToOrganization(
+      permissions,
       agentId,
       organizationId,
     );
-    if (hasBypass) return { accessLevel: 'bypass' };
-
-    const hasAccess = await this.hasAccessToOrganization(
-      permission,
-      agentId,
-      organizationId,
-    );
-    if (hasAccess) return { accessLevel: 'normal' };
-
-    return null;
   }
 
   async hasAccessToTeam(
-    permission: string,
+    permissions: bigint[],
     agentId: UUID,
     teamId: UUID,
   ): Promise<GuardAccess | null> {
@@ -151,21 +166,18 @@ export class GuardService {
 
     const { organizationId } = team;
 
-    const hasBypass = await this.hasAccessToOrganization(
-      'team.bypass',
+    // const hasBypass = await this.hasAccessToOrganization(
+    //   'team.bypass',
+    //   agentId,
+    //   organizationId,
+    // );
+    // if (hasBypass) return { accessLevel: 'bypass' };
+
+    return await this.hasAccessToOrganization(
+      permissions,
       agentId,
       organizationId,
     );
-    if (hasBypass) return { accessLevel: 'bypass' };
-
-    const hasAccess = await this.hasAccessToOrganization(
-      permission,
-      agentId,
-      organizationId,
-    );
-    if (hasAccess) return { accessLevel: 'normal' };
-
-    return null;
   }
 
   async isTeamInOrganization(orgId: UUID, teamId: UUID) {

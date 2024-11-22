@@ -8,7 +8,14 @@ import {
   timestamp,
   jsonb,
   unique,
+  customType,
 } from 'drizzle-orm/pg-core';
+
+const varbit = customType<{ data: number; config: { length: number } }>({
+  dataType(config) {
+    return config?.length ? `bit varying(${config.length})` : 'bit varying';
+  },
+});
 
 const AuditFields = {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -22,7 +29,7 @@ export const authType = pgTable(
   {
     typeId: varchar('type_id').notNull(),
   },
-  (t) => [primaryKey({ name: 'pk_auth_type', columns: [t.typeId] })],
+  (t) => [primaryKey({ columns: [t.typeId] })],
 );
 
 export const channelType = pgTable(
@@ -30,7 +37,7 @@ export const channelType = pgTable(
   {
     typeId: varchar('type_id').notNull(),
   },
-  (t) => [primaryKey({ name: 'pk_channel_type', columns: [t.typeId] })],
+  (t) => [primaryKey({ columns: [t.typeId] })],
 );
 
 export const ticketStatus = pgTable(
@@ -38,7 +45,7 @@ export const ticketStatus = pgTable(
   {
     statusId: varchar('status_id').notNull(),
   },
-  (t) => [primaryKey({ name: 'pk_ticket_status', columns: [t.statusId] })],
+  (t) => [primaryKey({ columns: [t.statusId] })],
 );
 
 export const messageStatus = pgTable(
@@ -46,7 +53,7 @@ export const messageStatus = pgTable(
   {
     statusId: varchar('status_id').notNull(),
   },
-  (t) => [primaryKey({ name: 'pk_message_status', columns: [t.statusId] })],
+  (t) => [primaryKey({ columns: [t.statusId] })],
 );
 
 export const agent = pgTable(
@@ -58,7 +65,7 @@ export const agent = pgTable(
     isEmailVerified: boolean('is_email_verified').notNull().default(false),
     ...AuditFields,
   },
-  (t) => [primaryKey({ name: 'pk_agent', columns: [t.agentId] })],
+  (t) => [primaryKey({ columns: [t.agentId] })],
 );
 
 export const agentAuth = pgTable(
@@ -70,14 +77,12 @@ export const agentAuth = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_agent_auth', columns: [t.agentId, t.authType] }),
+    primaryKey({ columns: [t.agentId, t.authType] }),
     foreignKey({
-      name: 'fk_agent_id',
       columns: [t.agentId],
       foreignColumns: [agent.agentId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_auth_type',
       columns: [t.authType],
       foreignColumns: [authType.typeId],
     }).onDelete('restrict'),
@@ -93,9 +98,8 @@ export const agentSession = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_agent_session', columns: [t.sessionId] }),
+    primaryKey({ columns: [t.sessionId] }),
     foreignKey({
-      name: 'fk_agent_id',
       columns: [t.agentId],
       foreignColumns: [agent.agentId],
     }).onDelete('cascade'),
@@ -106,18 +110,10 @@ export const organization = pgTable(
   'organization',
   {
     organizationId: uuid('organization_id').notNull().defaultRandom(),
-    ownerId: uuid('owner_id'),
     name: varchar('name').notNull(),
     ...AuditFields,
   },
-  (t) => [
-    primaryKey({ name: 'pk_organization', columns: [t.organizationId] }),
-    foreignKey({
-      name: 'fk_owner_id',
-      columns: [t.ownerId],
-      foreignColumns: [agent.agentId],
-    }).onDelete('set null'),
-  ],
+  (t) => [primaryKey({ columns: [t.organizationId] })],
 );
 
 export const organizationAgent = pgTable(
@@ -125,17 +121,20 @@ export const organizationAgent = pgTable(
   {
     organizationId: uuid('organization_id').notNull(),
     agentId: uuid('agent_id').notNull(),
+    isOwner: boolean('is_owner').notNull().default(false),
     ...AuditFields,
   },
   (t) => [
     primaryKey({
-      name: 'pk_organization_agent',
       columns: [t.organizationId, t.agentId],
     }),
     foreignKey({
-      name: 'fk_organization_id',
       columns: [t.organizationId],
       foreignColumns: [organization.organizationId],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [t.agentId],
+      foreignColumns: [agent.agentId],
     }).onDelete('cascade'),
   ],
 );
@@ -149,33 +148,34 @@ export const team = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_team', columns: [t.teamId] }),
+    primaryKey({ columns: [t.teamId] }),
     foreignKey({
-      name: 'fk_organization_id',
       columns: [t.organizationId],
       foreignColumns: [organization.organizationId],
     }).onDelete('cascade'),
   ],
 );
 
-export const teamAgent = pgTable(
-  'team_agent',
+export const agentTeam = pgTable(
+  'agent_team',
   {
+    organizationId: uuid('organization_id').notNull(),
     teamId: uuid('team_id').notNull(),
     agentId: uuid('agent_id').notNull(),
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_team_agent', columns: [t.teamId, t.agentId] }),
+    primaryKey({ columns: [t.teamId, t.agentId] }),
     foreignKey({
-      name: 'fk_team_id',
       columns: [t.teamId],
       foreignColumns: [team.teamId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_agent_id',
-      columns: [t.agentId],
-      foreignColumns: [agent.agentId],
+      columns: [t.agentId, t.organizationId],
+      foreignColumns: [
+        organizationAgent.agentId,
+        organizationAgent.organizationId,
+      ],
     }).onDelete('cascade'),
   ],
 );
@@ -187,9 +187,7 @@ export const masterCustomer = pgTable(
     customerName: varchar('customer_name'),
     ...AuditFields,
   },
-  (t) => [
-    primaryKey({ name: 'pk_master_customer', columns: [t.masterCustomerId] }),
-  ],
+  (t) => [primaryKey({ columns: [t.masterCustomerId] })],
 );
 
 export const channelCustomer = pgTable(
@@ -202,14 +200,12 @@ export const channelCustomer = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_channel_customer', columns: [t.channelCustomerId] }),
+    primaryKey({ columns: [t.channelCustomerId] }),
     foreignKey({
-      name: 'fk_master_customer_id',
       columns: [t.masterCustomerId],
       foreignColumns: [masterCustomer.masterCustomerId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_channel_type',
       columns: [t.channelType],
       foreignColumns: [channelType.typeId],
     }).onDelete('restrict'),
@@ -222,32 +218,26 @@ export const ticket = pgTable(
     ticketId: uuid('ticket_id').notNull().defaultRandom(),
     ticketCode: varchar('ticket_code').notNull(),
     organizationId: uuid('organization_id').notNull(),
-    // teamId: uuid('team_id'), // Separate table
-    // agentId: uuid('agent_id'), // Separate table
     channelId: uuid('channel_id'),
     channelCustomerId: uuid('channel_customer_id').notNull(),
     ticketStatus: varchar('ticket_status').notNull(),
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_ticket', columns: [t.ticketId] }),
+    primaryKey({ columns: [t.ticketId] }),
     foreignKey({
-      name: 'fk_organization_id',
       columns: [t.organizationId],
       foreignColumns: [organization.organizationId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_channel_id',
       columns: [t.channelId],
       foreignColumns: [channel.channelId],
     }).onDelete('set null'),
     foreignKey({
-      name: 'fk_channel_customer_id',
       columns: [t.channelCustomerId],
       foreignColumns: [channelCustomer.channelCustomerId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_ticket_status',
       columns: [t.ticketStatus],
       foreignColumns: [ticketStatus.statusId],
     }).onDelete('restrict'),
@@ -267,19 +257,16 @@ export const ticketMessage = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_ticket_message', columns: [t.messageId] }),
+    primaryKey({ columns: [t.messageId] }),
     foreignKey({
-      name: 'fk_ticket_id',
       columns: [t.ticketId],
       foreignColumns: [ticket.ticketId],
     }),
     foreignKey({
-      name: 'fk_agent_id',
       columns: [t.agentId],
       foreignColumns: [agent.agentId],
     }).onDelete('set null'),
     foreignKey({
-      name: 'fk_message_status',
       columns: [t.messageStatus],
       foreignColumns: [messageStatus.statusId],
     }).onDelete('restrict'),
@@ -303,14 +290,12 @@ export const channel = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_channel', columns: [t.channelId] }),
+    primaryKey({ columns: [t.channelId] }),
     foreignKey({
-      name: 'fk_organization_id',
       columns: [t.organizationId],
       foreignColumns: [organization.organizationId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_channel_type',
       columns: [t.channelType],
       foreignColumns: [channelType.typeId],
     }).onDelete('restrict'),
@@ -322,19 +307,21 @@ export const ticketAgent = pgTable(
   {
     ticketId: uuid('ticket_id').notNull(),
     agentId: uuid('agent_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_ticket_agent', columns: [t.ticketId, t.agentId] }),
+    primaryKey({ columns: [t.ticketId, t.agentId] }),
     foreignKey({
-      name: 'fk_ticket_id',
       columns: [t.ticketId],
       foreignColumns: [ticket.ticketId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_agent_id',
-      columns: [t.agentId],
-      foreignColumns: [agent.agentId],
+      columns: [t.agentId, t.organizationId],
+      foreignColumns: [
+        organizationAgent.agentId,
+        organizationAgent.organizationId,
+      ],
     }).onDelete('cascade'),
   ],
 );
@@ -347,16 +334,55 @@ export const ticketTeam = pgTable(
     ...AuditFields,
   },
   (t) => [
-    primaryKey({ name: 'pk_ticket_team', columns: [t.ticketId, t.teamId] }),
+    primaryKey({ columns: [t.ticketId, t.teamId] }),
     foreignKey({
-      name: 'fk_ticket_id',
       columns: [t.ticketId],
       foreignColumns: [ticket.ticketId],
     }).onDelete('cascade'),
     foreignKey({
-      name: 'fk_team_id',
       columns: [t.teamId],
       foreignColumns: [team.teamId],
+    }).onDelete('cascade'),
+  ],
+);
+
+export const role = pgTable(
+  'role',
+  {
+    roleId: uuid('role_id').notNull().defaultRandom(),
+    roleName: varchar('role_name', { length: 64 }).notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    permission: varbit('permission', { length: 32 }).notNull(),
+    isDefault: boolean('is_default').notNull().default(false),
+  },
+  (t) => [
+    primaryKey({ columns: [t.roleId] }),
+    foreignKey({
+      columns: [t.organizationId],
+      foreignColumns: [organization.organizationId],
+    }).onDelete('cascade'),
+  ],
+);
+
+export const agentRole = pgTable(
+  'agent_role',
+  {
+    roleId: uuid('role_id').notNull(),
+    agentId: uuid('agent_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.agentId, t.roleId] }),
+    foreignKey({
+      columns: [t.roleId],
+      foreignColumns: [role.roleId],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [t.agentId, t.organizationId],
+      foreignColumns: [
+        organizationAgent.agentId,
+        organizationAgent.organizationId,
+      ],
     }).onDelete('cascade'),
   ],
 );

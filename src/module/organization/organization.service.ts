@@ -4,6 +4,8 @@ import { UUID } from 'crypto';
 import { Database } from '@database/database';
 
 import { NewOrganizationDTO } from './dto/new-organization-dto';
+import { defaultRoles } from '@guard/permissions';
+import { toBinary } from '@util/index';
 
 @Injectable()
 export class OrganizationService {
@@ -17,7 +19,6 @@ export class OrganizationService {
         .insertInto('organization')
         .values({
           name,
-          ownerId: agentId,
           createdBy: agentId,
         })
         .returning(['organizationId'])
@@ -25,16 +26,42 @@ export class OrganizationService {
 
       const { organizationId } = newOrganization;
 
+      defaultRoles.forEach(async (role) => {
+        await tx
+          .insertInto('role')
+          .values({
+            roleName: role.name,
+            permission: toBinary(role.permissions),
+            isDefault: role.isDefault,
+            organizationId,
+          })
+          .execute();
+      });
+
       await tx
         .insertInto('organizationAgent')
         .values({
           organizationId,
           agentId,
+          isOwner: true,
         })
         .execute();
 
       return newOrganization;
     });
+  }
+
+  async getOrganizationsByAgentId(agentId: UUID) {
+    return await this.db
+      .selectFrom('organizationAgent')
+      .innerJoin(
+        'organization',
+        'organization.organizationId',
+        'organizationAgent.organizationId',
+      )
+      .select(['organizationAgent.organizationId', 'organization.name'])
+      .where('organizationAgent.agentId', '=', agentId)
+      .execute();
   }
 
   async getOrganizationById(orgId: UUID) {

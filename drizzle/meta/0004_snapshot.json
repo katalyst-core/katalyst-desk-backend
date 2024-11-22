@@ -1,6 +1,6 @@
 {
-  "id": "4299c23d-425c-4a32-9a96-38157e2e80f8",
-  "prevId": "fb6c0ec4-f3eb-44e5-aeac-5c5f748b40cd",
+  "id": "58b92bf4-ede9-4201-9a20-47dc324ff2d1",
+  "prevId": "a9cf40c9-f307-4d1d-8d3e-8029ced8b15f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -45,8 +45,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -64,8 +63,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_agent": {
-          "name": "pk_agent",
+        "agent_agent_id_pk": {
+          "name": "agent_agent_id_pk",
           "columns": [
             "agent_id"
           ]
@@ -109,8 +108,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -127,8 +125,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_agent_id": {
-          "name": "fk_agent_id",
+        "agent_auth_agent_id_agent_agent_id_fk": {
+          "name": "agent_auth_agent_id_agent_agent_id_fk",
           "tableFrom": "agent_auth",
           "tableTo": "agent",
           "columnsFrom": [
@@ -140,8 +138,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "fk_auth_type": {
-          "name": "fk_auth_type",
+        "agent_auth_auth_type_auth_type_type_id_fk": {
+          "name": "agent_auth_auth_type_auth_type_type_id_fk",
           "tableFrom": "agent_auth",
           "tableTo": "auth_type",
           "columnsFrom": [
@@ -155,11 +153,79 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_agent_auth": {
-          "name": "pk_agent_auth",
+        "agent_auth_agent_id_auth_type_pk": {
+          "name": "agent_auth_agent_id_auth_type_pk",
           "columns": [
             "agent_id",
             "auth_type"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.agent_role": {
+      "name": "agent_role",
+      "schema": "",
+      "columns": {
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "agent_role_role_id_role_role_id_fk": {
+          "name": "agent_role_role_id_role_role_id_fk",
+          "tableFrom": "agent_role",
+          "tableTo": "role",
+          "columnsFrom": [
+            "role_id"
+          ],
+          "columnsTo": [
+            "role_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_role_agent_id_organization_id_organization_agent_agent_id_organization_id_fk": {
+          "name": "agent_role_agent_id_organization_id_organization_agent_agent_id_organization_id_fk",
+          "tableFrom": "agent_role",
+          "tableTo": "organization_agent",
+          "columnsFrom": [
+            "agent_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "agent_id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "agent_role_agent_id_role_id_pk": {
+          "name": "agent_role_agent_id_role_id_pk",
+          "columns": [
+            "agent_id",
+            "role_id"
           ]
         }
       },
@@ -202,8 +268,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -220,8 +285,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_agent_id": {
-          "name": "fk_agent_id",
+        "agent_session_agent_id_agent_agent_id_fk": {
+          "name": "agent_session_agent_id_agent_agent_id_fk",
           "tableFrom": "agent_session",
           "tableTo": "agent",
           "columnsFrom": [
@@ -235,8 +300,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_agent_session": {
-          "name": "pk_agent_session",
+        "agent_session_session_id_pk": {
+          "name": "agent_session_session_id_pk",
           "columns": [
             "session_id"
           ]
@@ -255,6 +320,99 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.agent_team": {
+      "name": "agent_team",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "agent_team_team_id_team_team_id_fk": {
+          "name": "agent_team_team_id_team_team_id_fk",
+          "tableFrom": "agent_team",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "team_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "agent_team_agent_id_organization_id_organization_agent_agent_id_organization_id_fk": {
+          "name": "agent_team_agent_id_organization_id_organization_agent_agent_id_organization_id_fk",
+          "tableFrom": "agent_team",
+          "tableTo": "organization_agent",
+          "columnsFrom": [
+            "agent_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "agent_id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "agent_team_team_id_agent_id_pk": {
+          "name": "agent_team_team_id_agent_id_pk",
+          "columns": [
+            "team_id",
+            "agent_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.auth_type": {
       "name": "auth_type",
       "schema": "",
@@ -269,8 +427,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_auth_type": {
-          "name": "pk_auth_type",
+        "auth_type_type_id_pk": {
+          "name": "auth_type_type_id_pk",
           "columns": [
             "type_id"
           ]
@@ -298,12 +456,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "channel_auth_id": {
-          "name": "channel_auth_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "channel_type": {
           "name": "channel_type",
           "type": "varchar",
@@ -312,6 +464,12 @@
         },
         "channel_name": {
           "name": "channel_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel_parent_account": {
+          "name": "channel_parent_account",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -328,6 +486,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "channel_expiry_date": {
+          "name": "channel_expiry_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -339,8 +503,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -357,8 +520,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_organization_id": {
-          "name": "fk_organization_id",
+        "channel_organization_id_organization_organization_id_fk": {
+          "name": "channel_organization_id_organization_organization_id_fk",
           "tableFrom": "channel",
           "tableTo": "organization",
           "columnsFrom": [
@@ -370,21 +533,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "fk_channel_auth_id": {
-          "name": "fk_channel_auth_id",
-          "tableFrom": "channel",
-          "tableTo": "channel_auth",
-          "columnsFrom": [
-            "channel_auth_id"
-          ],
-          "columnsTo": [
-            "channel_auth_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "fk_channel_type": {
-          "name": "fk_channel_type",
+        "channel_channel_type_channel_type_type_id_fk": {
+          "name": "channel_channel_type_channel_type_type_id_fk",
           "tableFrom": "channel",
           "tableTo": "channel_type",
           "columnsFrom": [
@@ -398,126 +548,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_channel": {
-          "name": "pk_channel",
+        "channel_channel_id_pk": {
+          "name": "channel_channel_id_pk",
           "columns": [
             "channel_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.channel_auth": {
-      "name": "channel_auth",
-      "schema": "",
-      "columns": {
-        "channel_auth_id": {
-          "name": "channel_auth_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel_type": {
-          "name": "channel_type",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel_auth_name": {
-          "name": "channel_auth_name",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "channel_auth_account": {
-          "name": "channel_auth_account",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel_auth_config": {
-          "name": "channel_auth_config",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "channel_auth_expiry_date": {
-          "name": "channel_auth_expiry_date",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "fk_organization_id": {
-          "name": "fk_organization_id",
-          "tableFrom": "channel_auth",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "organization_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "fk_channel_type": {
-          "name": "fk_channel_type",
-          "tableFrom": "channel_auth",
-          "tableTo": "channel_type",
-          "columnsFrom": [
-            "channel_type"
-          ],
-          "columnsTo": [
-            "type_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "pk_channel_auth": {
-          "name": "pk_channel_auth",
-          "columns": [
-            "channel_auth_id"
           ]
         }
       },
@@ -566,8 +600,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -584,8 +617,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_master_customer_id": {
-          "name": "fk_master_customer_id",
+        "channel_customer_master_customer_id_master_customer_master_customer_id_fk": {
+          "name": "channel_customer_master_customer_id_master_customer_master_customer_id_fk",
           "tableFrom": "channel_customer",
           "tableTo": "master_customer",
           "columnsFrom": [
@@ -597,8 +630,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "fk_channel_type": {
-          "name": "fk_channel_type",
+        "channel_customer_channel_type_channel_type_type_id_fk": {
+          "name": "channel_customer_channel_type_channel_type_type_id_fk",
           "tableFrom": "channel_customer",
           "tableTo": "channel_type",
           "columnsFrom": [
@@ -612,8 +645,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_channel_customer": {
-          "name": "pk_channel_customer",
+        "channel_customer_channel_customer_id_pk": {
+          "name": "channel_customer_channel_customer_id_pk",
           "columns": [
             "channel_customer_id"
           ]
@@ -638,8 +671,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_channel_type": {
-          "name": "pk_channel_type",
+        "channel_type_type_id_pk": {
+          "name": "channel_type_type_id_pk",
           "columns": [
             "type_id"
           ]
@@ -678,8 +711,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -697,8 +729,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_master_customer": {
-          "name": "pk_master_customer",
+        "master_customer_master_customer_id_pk": {
+          "name": "master_customer_master_customer_id_pk",
           "columns": [
             "master_customer_id"
           ]
@@ -723,8 +755,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_message_status": {
-          "name": "pk_message_status",
+        "message_status_status_id_pk": {
+          "name": "message_status_status_id_pk",
           "columns": [
             "status_id"
           ]
@@ -746,12 +778,6 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "owner_id": {
-          "name": "owner_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "name": {
           "name": "name",
           "type": "varchar",
@@ -769,8 +795,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -786,24 +811,10 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "fk_owner_id": {
-          "name": "fk_owner_id",
-          "tableFrom": "organization",
-          "tableTo": "agent",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "agent_id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_organization": {
-          "name": "pk_organization",
+        "organization_organization_id_pk": {
+          "name": "organization_organization_id_pk",
           "columns": [
             "organization_id"
           ]
@@ -830,6 +841,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "is_owner": {
+          "name": "is_owner",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -841,8 +859,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -859,9 +876,89 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_organization_id": {
-          "name": "fk_organization_id",
+        "organization_agent_organization_id_organization_organization_id_fk": {
+          "name": "organization_agent_organization_id_organization_organization_id_fk",
           "tableFrom": "organization_agent",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "organization_agent_agent_id_agent_agent_id_fk": {
+          "name": "organization_agent_agent_id_agent_agent_id_fk",
+          "tableFrom": "organization_agent",
+          "tableTo": "agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "agent_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "organization_agent_organization_id_agent_id_pk": {
+          "name": "organization_agent_organization_id_agent_id_pk",
+          "columns": [
+            "organization_id",
+            "agent_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.role": {
+      "name": "role",
+      "schema": "",
+      "columns": {
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "role_name": {
+          "name": "role_name",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permission": {
+          "name": "permission",
+          "type": "bit varying(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "role_organization_id_organization_organization_id_fk": {
+          "name": "role_organization_id_organization_organization_id_fk",
+          "tableFrom": "role",
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
@@ -874,11 +971,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_organization_agent": {
-          "name": "pk_organization_agent",
+        "role_role_id_pk": {
+          "name": "role_role_id_pk",
           "columns": [
-            "organization_id",
-            "agent_id"
+            "role_id"
           ]
         }
       },
@@ -921,8 +1017,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -939,8 +1034,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_organization_id": {
-          "name": "fk_organization_id",
+        "team_organization_id_organization_organization_id_fk": {
+          "name": "team_organization_id_organization_organization_id_fk",
           "tableFrom": "team",
           "tableTo": "organization",
           "columnsFrom": [
@@ -954,96 +1049,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_team": {
-          "name": "pk_team",
+        "team_team_id_pk": {
+          "name": "team_team_id_pk",
           "columns": [
             "team_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.team_agent": {
-      "name": "team_agent",
-      "schema": "",
-      "columns": {
-        "team_id": {
-          "name": "team_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "fk_team_id": {
-          "name": "fk_team_id",
-          "tableFrom": "team_agent",
-          "tableTo": "team",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "team_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "fk_agent_id": {
-          "name": "fk_agent_id",
-          "tableFrom": "team_agent",
-          "tableTo": "agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "agent_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "pk_team_agent": {
-          "name": "pk_team_agent",
-          "columns": [
-            "team_id",
-            "agent_id"
           ]
         }
       },
@@ -1079,7 +1088,7 @@
           "name": "channel_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "channel_customer_id": {
           "name": "channel_customer_id",
@@ -1104,8 +1113,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -1122,8 +1130,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_organization_id": {
-          "name": "fk_organization_id",
+        "ticket_organization_id_organization_organization_id_fk": {
+          "name": "ticket_organization_id_organization_organization_id_fk",
           "tableFrom": "ticket",
           "tableTo": "organization",
           "columnsFrom": [
@@ -1135,8 +1143,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "fk_channel_id": {
-          "name": "fk_channel_id",
+        "ticket_channel_id_channel_channel_id_fk": {
+          "name": "ticket_channel_id_channel_channel_id_fk",
           "tableFrom": "ticket",
           "tableTo": "channel",
           "columnsFrom": [
@@ -1148,8 +1156,8 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "fk_channel_customer_id": {
-          "name": "fk_channel_customer_id",
+        "ticket_channel_customer_id_channel_customer_channel_customer_id_fk": {
+          "name": "ticket_channel_customer_id_channel_customer_channel_customer_id_fk",
           "tableFrom": "ticket",
           "tableTo": "channel_customer",
           "columnsFrom": [
@@ -1161,8 +1169,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "fk_ticket_status": {
-          "name": "fk_ticket_status",
+        "ticket_ticket_status_ticket_status_status_id_fk": {
+          "name": "ticket_ticket_status_ticket_status_status_id_fk",
           "tableFrom": "ticket",
           "tableTo": "ticket_status",
           "columnsFrom": [
@@ -1176,10 +1184,103 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_ticket": {
-          "name": "pk_ticket",
+        "ticket_ticket_id_pk": {
+          "name": "ticket_ticket_id_pk",
           "columns": [
             "ticket_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ticket_agent": {
+      "name": "ticket_agent",
+      "schema": "",
+      "columns": {
+        "ticket_id": {
+          "name": "ticket_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ticket_agent_ticket_id_ticket_ticket_id_fk": {
+          "name": "ticket_agent_ticket_id_ticket_ticket_id_fk",
+          "tableFrom": "ticket_agent",
+          "tableTo": "ticket",
+          "columnsFrom": [
+            "ticket_id"
+          ],
+          "columnsTo": [
+            "ticket_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ticket_agent_agent_id_organization_id_organization_agent_agent_id_organization_id_fk": {
+          "name": "ticket_agent_agent_id_organization_id_organization_agent_agent_id_organization_id_fk",
+          "tableFrom": "ticket_agent",
+          "tableTo": "organization_agent",
+          "columnsFrom": [
+            "agent_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "agent_id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ticket_agent_ticket_id_agent_id_pk": {
+          "name": "ticket_agent_ticket_id_agent_id_pk",
+          "columns": [
+            "ticket_id",
+            "agent_id"
           ]
         }
       },
@@ -1226,7 +1327,7 @@
         },
         "message_content": {
           "name": "message_content",
-          "type": "text",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
@@ -1247,8 +1348,7 @@
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -1265,8 +1365,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "fk_ticket_id": {
-          "name": "fk_ticket_id",
+        "ticket_message_ticket_id_ticket_ticket_id_fk": {
+          "name": "ticket_message_ticket_id_ticket_ticket_id_fk",
           "tableFrom": "ticket_message",
           "tableTo": "ticket",
           "columnsFrom": [
@@ -1278,8 +1378,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "fk_agent_id": {
-          "name": "fk_agent_id",
+        "ticket_message_agent_id_agent_agent_id_fk": {
+          "name": "ticket_message_agent_id_agent_agent_id_fk",
           "tableFrom": "ticket_message",
           "tableTo": "agent",
           "columnsFrom": [
@@ -1291,8 +1391,8 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "fk_message_status": {
-          "name": "fk_message_status",
+        "ticket_message_message_status_message_status_status_id_fk": {
+          "name": "ticket_message_message_status_message_status_status_id_fk",
           "tableFrom": "ticket_message",
           "tableTo": "message_status",
           "columnsFrom": [
@@ -1306,8 +1406,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "pk_ticket_message": {
-          "name": "pk_ticket_message",
+        "ticket_message_message_id_pk": {
+          "name": "ticket_message_message_id_pk",
           "columns": [
             "message_id"
           ]
@@ -1340,10 +1440,95 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "pk_ticket_status": {
-          "name": "pk_ticket_status",
+        "ticket_status_status_id_pk": {
+          "name": "ticket_status_status_id_pk",
           "columns": [
             "status_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ticket_team": {
+      "name": "ticket_team",
+      "schema": "",
+      "columns": {
+        "ticket_id": {
+          "name": "ticket_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ticket_team_ticket_id_ticket_ticket_id_fk": {
+          "name": "ticket_team_ticket_id_ticket_ticket_id_fk",
+          "tableFrom": "ticket_team",
+          "tableTo": "ticket",
+          "columnsFrom": [
+            "ticket_id"
+          ],
+          "columnsTo": [
+            "ticket_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ticket_team_team_id_team_team_id_fk": {
+          "name": "ticket_team_team_id_team_team_id_fk",
+          "tableFrom": "ticket_team",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "team_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ticket_team_ticket_id_team_id_pk": {
+          "name": "ticket_team_ticket_id_team_id_pk",
+          "columns": [
+            "ticket_id",
+            "team_id"
           ]
         }
       },

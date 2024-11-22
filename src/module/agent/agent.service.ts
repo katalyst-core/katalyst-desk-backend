@@ -10,7 +10,7 @@ import { executeWithTableOptions } from '@util/index';
 export class AgentService {
   constructor(private readonly db: Database) {}
 
-  async getAgentInfo(agentId: UUID) {
+  async getAgentInfoById(agentId: UUID) {
     return await this.db
       .selectFrom('agent')
       .select(['agent.name', 'agent.email'])
@@ -18,20 +18,7 @@ export class AgentService {
       .executeTakeFirst();
   }
 
-  async getOrganizationsByAgentId(agentId: UUID) {
-    return await this.db
-      .selectFrom('organizationAgent')
-      .innerJoin(
-        'organization',
-        'organization.organizationId',
-        'organizationAgent.organizationId',
-      )
-      .select(['organizationAgent.organizationId', 'organization.name'])
-      .where('organizationAgent.agentId', '=', agentId)
-      .execute();
-  }
-
-  async getAgentsByOrganizationId(orgId: UUID, tableOptions: TableOptionsDTO) {
+  async getAgentsInOrganization(orgId: UUID, tableOptions: TableOptionsDTO) {
     const query = this.db
       .selectFrom('agent')
       .innerJoin(
@@ -46,18 +33,25 @@ export class AgentService {
         'agent.createdAt as timestamp',
         jsonArrayFrom(
           selectFrom('team')
-            .leftJoin('teamAgent', 'teamAgent.teamId', 'team.teamId')
-            .whereRef('teamAgent.agentId', '=', 'agent.agentId')
+            .leftJoin('agentTeam', 'agentTeam.teamId', 'team.teamId')
+            .whereRef('agentTeam.agentId', '=', 'agent.agentId')
             .select(['team.teamId', 'team.name'])
             .where('team.organizationId', '=', orgId),
         ).as('teams'),
+        jsonArrayFrom(
+          selectFrom('role')
+            .leftJoin('agentRole', 'agentRole.roleId', 'role.roleId')
+            .whereRef('agentRole.agentId', '=', 'agent.agentId')
+            .select(['role.roleId', 'role.roleName'])
+            .where('role.organizationId', '=', orgId),
+        ).as('roles'),
       ])
       .where('organizationAgent.organizationId', '=', orgId);
 
     return executeWithTableOptions(query, tableOptions);
   }
 
-  async addAgentToOrganization(orgId: UUID, agentEmail: string) {
+  async addAgentToOrganizationByEmail(orgId: UUID, agentEmail: string) {
     const agent = await this.db
       .selectFrom('agent')
       .select(['agent.agentId'])
@@ -98,53 +92,72 @@ export class AgentService {
   }
 
   async removeAgentFromOrganization(orgId: UUID, agentId: UUID) {
-    // TODO: Remove associated organizations
-    await this.db.transaction().execute(async (tx) => {
-      await tx
-        .deleteFrom('teamAgent')
-        .where(({ eb, selectFrom }) =>
-          eb(
-            'teamAgent.teamId',
-            'in',
-            selectFrom('team')
-              .select(['team.teamId'])
-              .where('team.organizationId', '=', orgId),
-          ),
-        )
-        .where('teamAgent.agentId', '=', agentId)
-        .execute();
+    const orgAgent = await this.db
+      .deleteFrom('organizationAgent')
+      .where('organizationAgent.agentId', '=', agentId)
+      .where('organizationAgent.organizationId', '=', orgId)
+      .returning(['organizationAgent.agentId'])
+      .executeTakeFirst();
 
-      const orgAgent = await tx
-        .deleteFrom('organizationAgent')
-        .where('organizationAgent.agentId', '=', agentId)
-        .where('organizationAgent.organizationId', '=', orgId)
-        .returning(['organizationAgent.agentId'])
-        .executeTakeFirst();
-
-      if (!orgAgent) {
-        throw new BadRequestException({
-          message: `Agent doesn't exist`,
-          code: 'NO_AGENT',
-        });
-      }
-    });
+    if (!orgAgent) {
+      throw new BadRequestException({
+        message: `Agent doesn't exist`,
+        code: 'NO_AGENT',
+      });
+    }
   }
 
-  async assignTeam(agentId: UUID, teamId: UUID) {
+  async addAgentToTeam(organizationId: UUID, agentId: UUID, teamId: UUID) {
     await this.db
-      .insertInto('teamAgent')
+      .insertInto('agentTeam')
       .values({
+        organizationId,
         agentId,
         teamId,
       })
       .execute();
   }
 
-  async unassignTeam(agentId: UUID, teamId: UUID) {
+  async removeAgentFromTeam(organizationId: UUID, agentId: UUID, teamId: UUID) {
     await this.db
-      .deleteFrom('teamAgent')
-      .where('teamAgent.agentId', '=', agentId)
-      .where('teamAgent.teamId', '=', teamId)
+      .deleteFrom('agentTeam')
+      .where('agentTeam.organizationId', '=', organizationId)
+      .where('agentTeam.agentId', '=', agentId)
+      .where('agentTeam.teamId', '=', teamId)
+      .execute();
+  }
+
+  async addRoleToAgent(organizationId: UUID, agentId: UUID, roleId: UUID) {
+    const role = await this.db
+      .selectFrom('role')
+      .select(['role.isDefault'])
+      .where('role.roleId', '=', roleId)
+      .where('role.organizationId', '=', organizationId)
+      .executeTakeFirst();
+
+    if (!role || role.isDefault) {
+      throw new BadRequestException({
+        message: `Role Doesn't exist`,
+        code: 'NO_ROLE_FOUND',
+      });
+    }
+
+    await this.db
+      .insertInto('agentRole')
+      .values({
+        organizationId,
+        agentId,
+        roleId,
+      })
+      .execute();
+  }
+
+  async removeRoleFromAgent(organizationId: UUID, agentId: UUID, roleId: UUID) {
+    await this.db
+      .deleteFrom('agentRole')
+      .where('agentRole.organizationId', '=', organizationId)
+      .where('agentRole.agentId', '=', agentId)
+      .where('agentRole.roleId', '=', roleId)
       .execute();
   }
 }

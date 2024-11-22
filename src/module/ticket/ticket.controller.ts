@@ -14,21 +14,27 @@ import { UUID } from 'crypto';
 import { restoreUUID } from '@util/.';
 import { PermGuard } from '@decorator/route';
 import { Agent, ParamUUID } from '@decorator/param';
+import { AgentAccess } from '@module/auth/auth.type';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
+import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
+import {
+  TICKET_CLOSE,
+  TICKET_DETAIL,
+  TICKET_MESSAGE_LIST,
+  TICKET_MESSAGE_SEND,
+} from '@guard/permissions';
 
 import { TicketService } from './ticket.service';
 import { SendMessageDTO } from './dto/send-message-dto';
 import { MessagesResponseDTO } from './dto/messages-response-dto';
 import { TicketDetailsResponseDTO } from './dto/ticket-details-response-dto';
-import { AgentAccess } from '@module/auth/auth.type';
-import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
 
 @UseGuards(JWTAccess)
 @Controller('/ticket')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
-  @PermGuard('message.list')
+  @PermGuard([TICKET_MESSAGE_LIST])
   @Get('/:ticketId/messages')
   async getMessages(
     @ParamUUID('ticketId') ticketId: UUID,
@@ -63,7 +69,7 @@ export class TicketController {
     };
   }
 
-  @PermGuard('ticket.message.send')
+  @PermGuard([TICKET_MESSAGE_SEND])
   @Post('/:ticketId/send-message')
   async sendMessage(
     @Agent() agentId: UUID,
@@ -79,7 +85,7 @@ export class TicketController {
     };
   }
 
-  @PermGuard('ticket.detail')
+  @PermGuard([TICKET_DETAIL])
   @Get('/:ticketId/details')
   async getTicketDetails(@ParamUUID('ticketId') ticketId: UUID) {
     const ticket = await this.ticketService.getTicketDetails(ticketId);
@@ -94,7 +100,7 @@ export class TicketController {
     };
   }
 
-  @PermGuard('ticket.close')
+  @PermGuard([TICKET_CLOSE])
   @Get('/:ticketId/close')
   async closeTicket(@ParamUUID('ticketId') ticketId: UUID) {
     await this.ticketService.closeTicket(ticketId);

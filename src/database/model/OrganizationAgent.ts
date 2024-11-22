@@ -4,4 +4,5 @@ import { AuditFields } from '.';
 export interface OrganizationAgent extends AuditFields {
   organizationId: UUID;
   agentId: UUID;
+  isOwner: boolean;
 }

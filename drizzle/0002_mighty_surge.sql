@@ -1,1 +1,0 @@
-ALTER TABLE "channel_auth" RENAME COLUMN "channelAuthExpiryDate" TO "channel_auth_expiry_date";

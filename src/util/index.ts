@@ -76,6 +76,14 @@ export const isValidName = (name: string) => {
   return namePattern.test(name);
 };
 
+export const toBigInt = (binary: string) => {
+  return BigInt('0b' + binary);
+};
+
+export const toBinary = (num: bigint) => {
+  return num.toString(2);
+};
+
 type ExecuteOptions<T> = {
   transform?: (result: Simplify<T>) => unknown;
   sort?: string[];

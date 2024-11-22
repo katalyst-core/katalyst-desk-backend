@@ -1,10 +1,12 @@
 import { Kysely } from 'kysely';
 import { Team } from './model/Team';
+import { Role } from './model/Role';
 import { Agent } from './model/Agent';
 import { Ticket } from './model/Ticket';
 import { Channel } from './model/Channel';
 import { AuthType } from './model/AuthType';
-import { TeamAgent } from './model/TeamAgent';
+import { AgentTeam } from './model/AgentTeam';
+import { AgentRole } from './model/AgentRole';
 import { AgentAuth } from './model/AgentAuth';
 import { TicketTeam } from './model/TicketTeam';
 import { TicketAgent } from './model/TicketAgent';
@@ -20,11 +22,13 @@ import { OrganizationAgent } from './model/OrganizationAgent';
 
 interface Tables {
   team: Team;
+  role: Role;
   agent: Agent;
   ticket: Ticket;
   channel: Channel;
   authType: AuthType;
-  teamAgent: TeamAgent;
+  agentTeam: AgentTeam;
+  agentRole: AgentRole;
   agentAuth: AgentAuth;
   ticketTeam: TicketTeam;
   ticketAgent: TicketAgent;

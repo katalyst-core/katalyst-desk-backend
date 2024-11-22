@@ -1,7 +1,7 @@
 import { UUID } from 'crypto';
 
-export interface TicketAgent {
-  ticketId: UUID;
+export interface AgentRole {
+  roleId: UUID;
   agentId: UUID;
   organizationId: UUID;
 }

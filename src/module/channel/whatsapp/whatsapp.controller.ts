@@ -14,6 +14,7 @@ import { UUID } from 'crypto';
 import { Agent } from '@decorator/param';
 import { GuardService } from 'src/guard/guard.service';
 import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
+import { CHANNEL_MANAGE } from '@guard/permissions';
 
 import { WhatsAppService } from './whatsapp.service';
 import { WhatsAppAuthDTO } from './dto/whatsapp-auth-dto';
@@ -76,7 +77,7 @@ export class WhatsAppController {
     const { organization_id, phone_number_id, waba_id, code } = data;
 
     const hasAccess = await this.guard.hasAccessToOrganization(
-      'channel.register.whatsapp',
+      [CHANNEL_MANAGE],
       agentId,
       organization_id,
     );

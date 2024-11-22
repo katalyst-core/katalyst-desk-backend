@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 
 import { Database } from '@database/database';
-import { AccessLevel } from '@guard/guard.type';
 import { executeWithTableOptions } from '@util/.';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
 
@@ -22,7 +21,7 @@ export class TicketService {
   async getTicketsByOrgId(
     orgId: UUID,
     agentId: UUID,
-    accessLevel: AccessLevel,
+    hasBypass: boolean,
     tableOptions,
   ) {
     const ticketQuery = this.db
@@ -44,7 +43,7 @@ export class TicketService {
       )
       .leftJoin('ticketAgent', 'ticketAgent.ticketId', 'ticket.ticketId')
       .leftJoin('ticketTeam', 'ticketTeam.ticketId', 'ticket.ticketId')
-      .leftJoin('teamAgent', 'teamAgent.teamId', 'ticketTeam.teamId')
+      .leftJoin('agentTeam', 'agentTeam.teamId', 'ticketTeam.teamId')
       .select(({ selectFrom }) => [
         'ticket.ticketId',
         'ticket.ticketCode',
@@ -89,7 +88,7 @@ export class TicketService {
             .limit(1),
         ),
       )
-      .$if(accessLevel !== 'bypass', (qb) =>
+      .$if(!hasBypass, (qb) =>
         qb.where((eb) =>
           eb.or([
             eb.and([
@@ -97,7 +96,7 @@ export class TicketService {
               eb('ticketTeam.ticketId', 'is', null),
             ]),
             eb('ticketAgent.agentId', '=', agentId),
-            eb('teamAgent.agentId', '=', agentId),
+            eb('agentTeam.agentId', '=', agentId),
           ]),
         ),
       )
