@@ -3,13 +3,20 @@ import { UUID } from 'crypto';
 
 import { Database } from '@database/database';
 
-import { NewOrganizationDTO } from './dto/new-organization-dto';
 import { defaultRoles } from '@guard/permissions';
 import { toBinary } from '@util/index';
+import { ChannelGateway } from '@module/channel/channel.gateway';
+import { WsTypes } from '@websocket/websocket.type';
+import { ResponseDTO } from '@dto/response-dto';
+
+import { NewOrganizationDTO } from './dto/new-organization-dto';
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly gateway: ChannelGateway,
+  ) {}
 
   async createOrganization(agentId: UUID, data: NewOrganizationDTO) {
     return this.db.transaction().execute(async (tx) => {
@@ -79,5 +86,22 @@ export class OrganizationService {
     }
 
     return org;
+  }
+
+  async sendGatewayMessage<T extends ResponseDTO = any>(
+    orgId: UUID,
+    type: WsTypes,
+    data: T,
+    dto?: { new (...args: any[]): T },
+  ) {
+    const orgs = await this.db
+      .selectFrom('organizationAgent')
+      .select(['organizationAgent.agentId'])
+      .where('organizationAgent.organizationId', '=', orgId)
+      .execute();
+
+    orgs.forEach((org) => {
+      this.gateway.sendAgent(org.agentId, type, data, dto);
+    });
   }
 }

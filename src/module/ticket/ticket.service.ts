@@ -2,12 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 
 import { Database } from '@database/database';
-import { executeWithTableOptions } from '@util/.';
+import { executeWithTableOptions, restoreUUID } from '@util/.';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
 
 import { ChannelService } from '@module/channel/channel.service';
 import { WhatsAppService } from '@module/channel/whatsapp/whatsapp.service';
 import { InstagramService } from '@module/channel/instagram/instagram.service';
+import { OrganizationService } from '@module/organization/organization.service';
+import { TicketUpdateResponseDTO } from './dto/ticket-update-response-dto';
+import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import { sql } from 'kysely';
 
 @Injectable()
 export class TicketService {
@@ -16,14 +20,20 @@ export class TicketService {
     private readonly channelService: ChannelService,
     private readonly instagramService: InstagramService,
     private readonly whatsAppService: WhatsAppService,
+    private readonly orgService: OrganizationService,
   ) {}
 
-  async getTicketsByOrgId(
-    orgId: UUID,
-    agentId: UUID,
-    hasBypass: boolean,
-    tableOptions,
-  ) {
+  async getTicketsByOrgId(orgId: UUID, tableOptions: TableOptionsDTO) {
+    const filter =
+      tableOptions.filter &&
+      tableOptions.filter.reduce((prev, curr) => {
+        const [key, value] = curr.split(':');
+
+        if (key === 'team') prev.push(restoreUUID(value));
+
+        return prev;
+      }, [] as UUID[]);
+
     const ticketQuery = this.db
       .selectFrom('ticket')
       .innerJoin(
@@ -41,11 +51,8 @@ export class TicketService {
         'latestMessage.ticketId',
         'ticket.ticketId',
       )
-      .leftJoin('ticketAgent', 'ticketAgent.ticketId', 'ticket.ticketId')
-      .leftJoin('ticketTeam', 'ticketTeam.ticketId', 'ticket.ticketId')
-      .leftJoin('agentTeam', 'agentTeam.teamId', 'ticketTeam.teamId')
       .select(({ selectFrom }) => [
-        'ticket.ticketId',
+        'ticket.ticketId as ticket_id',
         'ticket.ticketCode',
         'ticket.ticketStatus',
         'masterCustomer.customerName',
@@ -53,6 +60,7 @@ export class TicketService {
         'latestMessage.messageStatus',
         'latestMessage.createdAt',
         'latestMessage.messageContent',
+        'channelCustomer.channelCustomerId',
         selectFrom('ticketMessage')
           .whereRef('ticketMessage.ticketId', '=', 'ticket.ticketId')
           .select(({ fn }) => [
@@ -60,6 +68,12 @@ export class TicketService {
           ])
           .where('ticketMessage.messageStatus', '!=', 'read')
           .as('unread'),
+        jsonArrayFrom(
+          selectFrom('team')
+            .innerJoin('ticketTeam', 'ticketTeam.teamId', 'team.teamId')
+            .whereRef('ticketTeam.ticketId', '=', 'ticket.ticketId')
+            .select(['team.name']),
+        ).as('teams'),
       ])
       .where('ticket.organizationId', '=', orgId)
       .where(({ eb, selectFrom }) =>
@@ -88,16 +102,18 @@ export class TicketService {
             .limit(1),
         ),
       )
-      .$if(!hasBypass, (qb) =>
-        qb.where((eb) =>
-          eb.or([
-            eb.and([
-              eb('ticketAgent.ticketId', 'is', null),
-              eb('ticketTeam.ticketId', 'is', null),
-            ]),
-            eb('ticketAgent.agentId', '=', agentId),
-            eb('agentTeam.agentId', '=', agentId),
-          ]),
+      .$if(!!filter, (qb) =>
+        qb.where(({ eb, selectFrom }) =>
+          eb(
+            'ticket.ticketId',
+            'in',
+            selectFrom('ticketTeam')
+              .select(['ticketTeam.ticketId'])
+              .whereRef('ticketTeam.ticketId', '=', 'ticket.ticketId')
+              .where((eb) =>
+                eb.or(filter.map((t) => eb('ticketTeam.teamId', '=', t))),
+              ),
+          ),
         ),
       )
       .orderBy('latestMessage.createdAt', 'desc');
@@ -150,42 +166,6 @@ export class TicketService {
 
     return messages;
   }
-
-  async readTicketMessages(ticketId: UUID, agentId: UUID) {
-    const ticket = await this.db
-      .selectFrom('ticket')
-      .innerJoin(
-        'organization',
-        'organization.organizationId',
-        'ticket.organizationId',
-      )
-      .innerJoin(
-        'organizationAgent',
-        'organizationAgent.organizationId',
-        'organization.organizationId',
-      )
-      .where('organizationAgent.agentId', '=', agentId)
-      .where('ticket.ticketId', '=', ticketId)
-      .executeTakeFirst();
-
-    if (!ticket) {
-      throw new BadRequestException({
-        message: 'Agent does not have access to this ticket',
-        code: 'AGENT_INVALID_ACCESS',
-      });
-    }
-
-    // TODO: Read message in their respective channel
-
-    await this.db
-      .updateTable('ticketMessage')
-      .set({ messageStatus: 'read' })
-      .where('ticketMessage.messageStatus', '!=', 'read')
-      .where('ticketMessage.ticketId', '=', ticketId)
-      .execute();
-  }
-
-  // TODO: Read messages in WhatsApp (if on whatsapp)
 
   async sendMessage(ticketId: UUID, agentId: UUID, text: string) {
     const ticket = await this.db
@@ -265,11 +245,26 @@ export class TicketService {
         'masterCustomer.masterCustomerId',
         'channelCustomer.masterCustomerId',
       )
-      .select([
+      .select(({ selectFrom }) => [
         'ticket.ticketId',
         'ticket.ticketCode',
         'ticket.ticketStatus',
         'masterCustomer.customerName',
+        'ticket.conversationExpiration',
+        jsonArrayFrom(
+          selectFrom('team')
+            .leftJoin('ticketTeam', (join) =>
+              join
+                .onRef('ticketTeam.teamId', '=', 'team.teamId')
+                .onRef('ticketTeam.ticketId', '=', 'ticket.ticketId'),
+            )
+            .whereRef('team.organizationId', '=', 'ticket.organizationId')
+            .select([
+              'team.teamId',
+              'team.name',
+              sql`ticket_team.team_id is not null`.as('active'),
+            ]),
+        ).as('teams'),
       ])
       .where('ticket.ticketId', '=', ticketId)
       .executeTakeFirst();
@@ -289,7 +284,11 @@ export class TicketService {
       .updateTable('ticket')
       .set({ ticketStatus: 'close' })
       .where('ticket.ticketId', '=', ticketId)
-      .returning(['ticket.ticketId'])
+      .returning([
+        'ticket.ticketId',
+        'ticket.organizationId',
+        'ticket.ticketStatus',
+      ])
       .executeTakeFirst();
 
     if (!ticket) {
@@ -298,5 +297,95 @@ export class TicketService {
         code: 'INVALID_TICKET',
       });
     }
+
+    const wsContent = {
+      ticketId,
+      ticketStatus: ticket.ticketStatus,
+    } satisfies TicketUpdateResponseDTO;
+
+    this.orgService.sendGatewayMessage<TicketUpdateResponseDTO>(
+      ticket.organizationId,
+      'ticket-update',
+      wsContent,
+      TicketUpdateResponseDTO,
+    );
+  }
+
+  async addTeamToTicket(orgId: UUID, ticketId: UUID, teamId: UUID) {
+    const team = await this.db
+      .selectFrom('team')
+      .select(['team.teamId'])
+      .where('team.teamId', '=', teamId)
+      .where('team.organizationId', '=', orgId)
+      .executeTakeFirst();
+
+    if (!team) {
+      throw new BadRequestException({
+        message: 'Team does not exist',
+        code: 'TEAM_NOT_FOUND',
+      });
+    }
+
+    const agent = await this.db
+      .selectFrom('ticket')
+      .select(['ticket.ticketId'])
+      .where('ticket.organizationId', '=', orgId)
+      .where('ticket.ticketId', '=', ticketId)
+      .executeTakeFirst();
+
+    if (!agent) {
+      throw new BadRequestException({
+        message: 'agent does not exist',
+        code: 'AGENT_NOT_FOUND',
+      });
+    }
+
+    await this.db
+      .insertInto('ticketTeam')
+      .values({
+        ticketId,
+        teamId,
+      })
+      .execute();
+
+    this.orgService.sendGatewayMessage(orgId, 'ticket-refresh', {});
+  }
+
+  async removeTeamToTicket(orgId: UUID, ticketId: UUID, teamId: UUID) {
+    const team = await this.db
+      .selectFrom('team')
+      .select(['team.teamId'])
+      .where('team.teamId', '=', teamId)
+      .where('team.organizationId', '=', orgId)
+      .executeTakeFirst();
+
+    if (!team) {
+      throw new BadRequestException({
+        message: 'Team does not exist',
+        code: 'TEAM_NOT_FOUND',
+      });
+    }
+
+    const agent = await this.db
+      .selectFrom('ticket')
+      .select(['ticket.ticketId'])
+      .where('ticket.organizationId', '=', orgId)
+      .where('ticket.ticketId', '=', ticketId)
+      .executeTakeFirst();
+
+    if (!agent) {
+      throw new BadRequestException({
+        message: 'agent does not exist',
+        code: 'AGENT_NOT_FOUND',
+      });
+    }
+
+    await this.db
+      .deleteFrom('ticketTeam')
+      .where('ticketTeam.ticketId', '=', ticketId)
+      .where('ticketTeam.teamId', '=', teamId)
+      .execute();
+
+    this.orgService.sendGatewayMessage(orgId, 'ticket-refresh', {});
   }
 }

@@ -2,8 +2,13 @@ import { Expose } from 'class-transformer';
 import { UUID } from 'crypto';
 
 import { ResponseDTO } from '@dto/response-dto';
-import { ShortenUUID } from '@decorator/class-transformer';
+import { ShortenUUID, TransformDTO } from '@decorator/class-transformer';
 import { MessageStatusId } from '@database/model/MessageStatus';
+
+class Team extends ResponseDTO {
+  @Expose({ name: 'name' })
+  name: string;
+}
 
 export class TicketsResponseDTO extends ResponseDTO {
   @ShortenUUID()
@@ -18,6 +23,14 @@ export class TicketsResponseDTO extends ResponseDTO {
 
   @Expose({ name: 'display_name' })
   customerName: string;
+
+  @TransformDTO(Team)
+  @Expose({ name: 'teams' })
+  teams: Team[];
+
+  @ShortenUUID()
+  @Expose({ name: 'channel_customer_id' })
+  channelCustomerId: UUID;
 
   @Expose({ name: 'last_message' })
   messageContent: string;

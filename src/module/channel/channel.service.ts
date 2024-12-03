@@ -4,19 +4,21 @@ import * as crypto from 'crypto';
 
 import { shortenUUID } from '@util/.';
 import { Database } from '@database/database';
+import { OrganizationService } from '@module/organization/organization.service';
 
-import { ChannelGateway } from './channel.gateway';
-import { ChannelMessage, RegisterMessage } from './channel.type';
+import { ChannelMessage, RegisterMessage, UpdateMessage } from './channel.type';
 import { WhatsAppMessageSchema } from './whatsapp/whatsapp.schema';
 import { NewTicketResponseDTO } from './dto/new-ticket-response-dto';
 import { InstagramMessageSchema } from './instagram/instagram.schema';
 import { TicketMessageResponseDTO } from './dto/ticket-message-response-dto';
+import { TicketUpdateResponseDTO } from '../ticket/dto/ticket-update-response-dto';
+import { ChannelTypeId } from '@database/model/ChannelType';
 
 @Injectable()
 export class ChannelService {
   constructor(
     private readonly db: Database,
-    private readonly gateway: ChannelGateway,
+    private readonly orgService: OrganizationService,
   ) {}
 
   async getChannelAccountsByOrgId(orgId: UUID) {
@@ -167,6 +169,7 @@ export class ChannelService {
           }
 
           const { ticketId } = ticket;
+          const messageStatus = !isCustomer ? 'delivered' : 'none';
 
           const newMessage = await tx
             .insertInto('ticketMessage')
@@ -174,7 +177,7 @@ export class ChannelService {
               ticketId,
               messageCode,
               isCustomer,
-              messageStatus: 'received',
+              messageStatus,
               messageContent: message as JSON,
               createdAt: timestamp,
             })
@@ -194,17 +197,18 @@ export class ChannelService {
 
           if (newMessage.updatedAt) return;
 
-          const agents = await tx
-            .selectFrom('organizationAgent')
-            .select(['organizationAgent.agentId'])
-            .where(
-              'organizationAgent.organizationId',
-              '=',
-              channel.organizationId,
-            )
-            .execute();
-
           const channelMessage = this.transformRaw(message);
+
+          const wsTicketMessage = {
+            ...ticket,
+            ...newMessage,
+            isCustomer,
+            messageContent: channelMessage,
+            unread: 1,
+            messageStatus,
+            ticketStatus: 'close',
+          } satisfies NewTicketResponseDTO | TicketMessageResponseDTO;
+
           if (isTicketNew) {
             const masterCustomer = await tx
               .selectFrom('masterCustomer')
@@ -213,7 +217,10 @@ export class ChannelService {
                 'channelCustomer.masterCustomerId',
                 'masterCustomer.masterCustomerId',
               )
-              .select(['masterCustomer.customerName'])
+              .select([
+                'masterCustomer.customerName',
+                'channelCustomer.channelCustomerId',
+              ])
               .where(
                 'channelCustomer.channelCustomerId',
                 '=',
@@ -222,40 +229,28 @@ export class ChannelService {
               .executeTakeFirst();
 
             const wsTicket = {
-              ...ticket,
-              ...newMessage,
+              ...wsTicketMessage,
               ...masterCustomer,
-              isCustomer,
-              messageContent: channelMessage,
-              unread: 1,
-              messageStatus: 'received',
               ticketStatus: 'close',
+              teams: [],
             } satisfies NewTicketResponseDTO;
 
-            agents.forEach(({ agentId }) =>
-              this.gateway.sendAgent(
-                agentId,
-                'new-ticket',
-                wsTicket,
-                NewTicketResponseDTO,
-              ),
+            this.orgService.sendGatewayMessage<NewTicketResponseDTO>(
+              channel.organizationId,
+              'new-ticket',
+              wsTicket,
+              NewTicketResponseDTO,
             );
           } else {
             const wsMessage = {
-              ...ticket,
-              ...newMessage,
-              isCustomer,
-              messageContent: channelMessage,
-              messageStatus: 'received',
+              ...wsTicketMessage,
             } satisfies TicketMessageResponseDTO;
 
-            agents.forEach(({ agentId }) =>
-              this.gateway.sendAgent(
-                agentId,
-                'ticket-message',
-                wsMessage,
-                TicketMessageResponseDTO,
-              ),
+            this.orgService.sendGatewayMessage(
+              channel.organizationId,
+              'ticket-message',
+              wsMessage,
+              TicketMessageResponseDTO,
             );
           }
         });
@@ -263,6 +258,66 @@ export class ChannelService {
     } catch (err) {
       console.error(err);
     }
+  }
+
+  async updateMessage(data: UpdateMessage) {
+    const { messageCode, status, expiration, conversationId } = data;
+
+    const message = await this.db
+      .updateTable('ticketMessage')
+      .set({
+        messageStatus: status,
+      })
+      .where('ticketMessage.messageCode', '=', messageCode)
+      .returning(['ticketMessage.ticketId', 'ticketMessage.messageId'])
+      .executeTakeFirst();
+
+    if (!message) return;
+
+    const org = await this.db
+      .selectFrom('ticket')
+      .select(['ticket.organizationId'])
+      .where('ticket.ticketId', '=', message.ticketId)
+      .executeTakeFirst();
+
+    if (expiration) {
+      await this.db
+        .updateTable('ticket')
+        .set({ conversationId, conversationExpiration: expiration })
+        .where('ticket.ticketId', '=', message.ticketId)
+        .execute();
+    }
+
+    const wsMessage = {
+      ticketId: message.ticketId,
+      messageId: message.messageId,
+      messageStatus: status,
+      expiration,
+    } satisfies TicketUpdateResponseDTO;
+
+    this.orgService.sendGatewayMessage<TicketUpdateResponseDTO>(
+      org.organizationId,
+      'ticket-update',
+      wsMessage,
+      TicketUpdateResponseDTO,
+    );
+  }
+
+  async logEvent(
+    channelType: ChannelTypeId,
+    content: JSON,
+    error: JSON | undefined,
+    isProcessed,
+  ) {
+    await this.db
+      .insertInto('channelEventLog')
+      .values({
+        content,
+        error,
+        channelType,
+        isProcessed,
+      })
+      .execute();
   }
 
   transformRaw(data: JSON): ChannelMessage | null {

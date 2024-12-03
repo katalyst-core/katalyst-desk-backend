@@ -22,6 +22,12 @@ export const InstagramMessageSchema = z.object({
   is_echo: z.boolean().optional(),
 });
 
+export const InstagramReadSchema = z
+  .object({
+    mid: z.string(),
+  })
+  .strict();
+
 export const InstagramWebhookSchema = z
   .object({
     object: z.literal('instagram'),
@@ -38,7 +44,8 @@ export const InstagramWebhookSchema = z
                 timestamp: z.number(),
                 message: InstagramMessageSchema.merge(
                   InstagramMessagePropsSchema,
-                ),
+                ).optional(),
+                read: InstagramReadSchema.optional(),
               })
               .strict(),
           ),

@@ -36,6 +36,48 @@
       "when": 1732258388729,
       "tag": "0004_steep_carmella_unuscione",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1732603059454,
+      "tag": "0005_numerous_ink",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1732603137029,
+      "tag": "0006_modify_message_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1732773900247,
+      "tag": "0007_tan_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1732773934000,
+      "tag": "0008_message_status_update",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1732846640982,
+      "tag": "0009_shiny_slyde",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1732847453565,
+      "tag": "0010_natural_skreet",
+      "breakpoints": true
     }
   ]
 }

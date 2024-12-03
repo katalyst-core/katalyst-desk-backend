@@ -12,6 +12,7 @@ import {
   WhatsAppMessageSchema,
   WhatsAppWebhook,
 } from './whatsapp.schema';
+import { MessageStatusId } from '@database/model/MessageStatus';
 
 @Injectable()
 export class WhatsAppService {
@@ -29,9 +30,10 @@ export class WhatsAppService {
           metadata: { phone_number_id: channelId },
           contacts,
           messages,
+          statuses,
         } = change.value;
 
-        messages.forEach((message) => {
+        messages?.forEach((message) => {
           const { from: customerId, id: messageCode, timestamp } = message;
 
           const parsedMessage = WhatsAppMessageSchema.safeParse(message);
@@ -50,6 +52,22 @@ export class WhatsAppService {
             message: newMessage,
             channelType: 'whatsapp',
             customerName,
+          });
+        });
+
+        statuses?.forEach((_status) => {
+          const { id: messageCode, status } = _status;
+
+          const { id: conversationId, expiration_timestamp } =
+            _status?.conversation || {};
+
+          this.channelService.updateMessage({
+            messageCode,
+            status: status as MessageStatusId,
+            ...(expiration_timestamp && {
+              expiration: new Date(Number(expiration_timestamp) * 1000),
+            }),
+            ...(conversationId && { conversationId }),
           });
         });
       });
@@ -85,9 +103,40 @@ export class WhatsAppService {
       accessToken,
     );
 
+    this.readTicketMessages(channelAccount, customerAccount, accessToken);
+
     const messageCode = response.data.messages[0].id;
 
     return [messageCode, message];
+  }
+
+  async readTicketMessages(
+    channelAccount: string,
+    customerAccount: string,
+    accessToken: string,
+  ) {
+    const ticketMessage = await this.db
+      .selectFrom('ticket')
+      .innerJoin('channel', 'channel.channelId', 'ticket.channelId')
+      .innerJoin(
+        'channelCustomer',
+        'channelCustomer.channelCustomerId',
+        'channelCustomer.channelCustomerId',
+      )
+      .innerJoin('ticketMessage', 'ticketMessage.ticketId', 'ticket.ticketId')
+      .select(['ticketMessage.messageCode'])
+      .where('channel.channelAccount', '=', channelAccount)
+      .where('channelCustomer.customerAccount', '=', customerAccount)
+      .where('ticket.ticketStatus', '=', 'open')
+      .where('ticketMessage.isCustomer', '=', true)
+      .orderBy('ticketMessage.createdAt', 'desc')
+      .executeTakeFirst();
+
+    this.whatsAppAPI.readMessage(
+      channelAccount,
+      ticketMessage.messageCode,
+      accessToken,
+    );
   }
 
   async authenticateChannel(

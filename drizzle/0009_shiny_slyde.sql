@@ -1,0 +1,1 @@
+ALTER TABLE "channel_event_log" ADD COLUMN "error" jsonb;

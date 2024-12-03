@@ -18,6 +18,7 @@ import { TicketMessage } from './model/TicketMessage';
 import { MessageStatus } from './model/MessageStatus';
 import { MasterCustomer } from './model/MasterCustomer';
 import { ChannelCustomer } from './model/ChannelCustomer';
+import { ChannelEventLog } from './model/ChannelEventLog';
 import { OrganizationAgent } from './model/OrganizationAgent';
 
 interface Tables {
@@ -40,6 +41,7 @@ interface Tables {
   messageStatus: MessageStatus;
   masterCustomer: MasterCustomer;
   channelCustomer: ChannelCustomer;
+  channelEventLog: ChannelEventLog;
   organizationAgent: OrganizationAgent;
 }
 

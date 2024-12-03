@@ -1,4 +1,11 @@
-import { IsInt, IsOptional, IsString, Matches, Min } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+} from 'class-validator';
 
 export class TableOptionsDTO {
   @IsOptional()
@@ -14,4 +21,8 @@ export class TableOptionsDTO {
   @IsOptional()
   @IsInt()
   limit: number;
+
+  @IsOptional()
+  @IsArray()
+  filter: string[];
 }

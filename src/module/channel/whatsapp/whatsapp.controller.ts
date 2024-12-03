@@ -61,6 +61,14 @@ export class WhatsAppController {
     if (!content) return;
 
     const result = WhatsAppWebhookSchema.safeParse(content);
+
+    this.channelService.logEvent(
+      'whatsapp',
+      content,
+      !result.success ? JSON.parse(JSON.stringify(result.error)) : undefined,
+      result.success,
+    );
+
     if (!result.success) return;
 
     this.whatsAppService.handleMessage(result.data);

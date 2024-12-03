@@ -1,4 +1,4 @@
-export type MessageStatusId = 'sent' | 'received' | 'read';
+export type MessageStatusId = 'sent' | 'delivered' | 'read' | 'none';
 
 export interface MessageStatus {
   statusId: MessageStatusId;

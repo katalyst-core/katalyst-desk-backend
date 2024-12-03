@@ -1,20 +1,8 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { UUID } from 'crypto';
 
-import { restoreUUID } from '@util/.';
 import { PermGuard } from '@decorator/route';
 import { Agent, ParamUUID } from '@decorator/param';
-import { AgentAccess } from '@module/auth/auth.type';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
 import { JWTAccess } from '@module/auth/strategy/jwt-access.strategy';
 import {
@@ -51,21 +39,6 @@ export class TicketController {
       },
       message: 'Successfully retrieved messages',
       data: messages,
-    };
-  }
-
-  //TODO: Replace this later with read on agent send message
-  @Post('/:id/read-messages')
-  async readMessages(@Req() req: Request, @Param('id') ticketShortId: string) {
-    const ticketId = restoreUUID(ticketShortId);
-
-    const user = req.user as AgentAccess;
-    const { agentId } = user;
-
-    await this.ticketService.readTicketMessages(ticketId, agentId);
-
-    return {
-      message: 'Successfully read messages',
     };
   }
 
