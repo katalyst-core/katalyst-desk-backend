@@ -1,6 +1,8 @@
 import { UUID } from 'crypto';
 
-export interface TicketTeam {
+import { AuditFields } from '.';
+
+export interface TicketTeam extends AuditFields {
   ticketId: UUID;
   teamId: UUID;
 }

@@ -9,6 +9,7 @@ import {
   jsonb,
   unique,
   customType,
+  bigserial,
 } from 'drizzle-orm/pg-core';
 
 const varbit = customType<{ data: number; config: { length: number } }>({
@@ -221,6 +222,10 @@ export const ticket = pgTable(
     channelId: uuid('channel_id'),
     channelCustomerId: uuid('channel_customer_id').notNull(),
     ticketStatus: varchar('ticket_status').notNull(),
+    conversationId: varchar('conversation_id'),
+    conversationExpiration: timestamp('conversation_expiration', {
+      withTimezone: true,
+    }),
     ...AuditFields,
   },
   (t) => [
@@ -354,6 +359,7 @@ export const role = pgTable(
     organizationId: uuid('organization_id').notNull(),
     permission: varbit('permission', { length: 32 }).notNull(),
     isDefault: boolean('is_default').notNull().default(false),
+    ...AuditFields,
   },
   (t) => [
     primaryKey({ columns: [t.roleId] }),
@@ -370,6 +376,7 @@ export const agentRole = pgTable(
     roleId: uuid('role_id').notNull(),
     agentId: uuid('agent_id').notNull(),
     organizationId: uuid('organization_id').notNull(),
+    ...AuditFields,
   },
   (t) => [
     primaryKey({ columns: [t.agentId, t.roleId] }),
@@ -384,5 +391,24 @@ export const agentRole = pgTable(
         organizationAgent.organizationId,
       ],
     }).onDelete('cascade'),
+  ],
+);
+
+export const channelEventLog = pgTable(
+  'channel_event_log',
+  {
+    id: bigserial('id', { mode: 'bigint' }).notNull(),
+    content: jsonb('content').notNull(),
+    error: jsonb('error'),
+    channelType: varchar('channel_type').notNull(),
+    isProcessed: boolean('is_processed').notNull(),
+    ...AuditFields,
+  },
+  (t) => [
+    primaryKey({ columns: [t.id] }),
+    foreignKey({
+      columns: [t.channelType],
+      foreignColumns: [channelType.typeId],
+    }),
   ],
 );

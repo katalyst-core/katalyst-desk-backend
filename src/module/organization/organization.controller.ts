@@ -49,6 +49,7 @@ import { OrganizationService } from './organization.service';
 import { NewOrganizationDTO } from './dto/new-organization-dto';
 import { NewOrganizationResponseDTO } from './dto/new-organization-response-dto';
 import { OrganizationInfoResponseDTO } from './dto/organization-info-response-dto';
+import { AssignTicketTeamDTO } from '@module/ticket/dto/assign-ticket-team-dto';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
@@ -117,13 +118,11 @@ export class OrganizationController {
     @Guard() guardAccess: GuardAccess,
     @Query() tableOptions: TableOptionsDTO,
   ) {
-    const { isOwner, permissions } = guardAccess;
-    const hasBypass = isOwner || permissions.includes(TICKET_MANAGE);
+    // const { isOwner, permissions } = guardAccess;
+    // const hasBypass = isOwner || permissions.includes(TICKET_MANAGE);
 
     const tickets = await this.ticketService.getTicketsByOrgId(
       orgId,
-      agentId,
-      hasBypass,
       tableOptions,
     );
 
@@ -326,6 +325,38 @@ export class OrganizationController {
     return {
       code: 200,
       message: 'Successfully removed role from agent',
+    };
+  }
+
+  @PermGuard([TICKET_MANAGE])
+  @Post('/:orgId/add-ticket-team')
+  async addTeamToTicket(
+    @ParamUUID('orgId') orgId: UUID,
+    @Body() body: AssignTicketTeamDTO,
+  ) {
+    const { ticket_id, team_id } = body;
+
+    await this.ticketService.addTeamToTicket(orgId, ticket_id, team_id);
+
+    return {
+      code: 200,
+      message: 'Successfully added team to ticket',
+    };
+  }
+
+  @PermGuard([TICKET_MANAGE])
+  @Post('/:orgId/remove-ticket-team')
+  async removeTeamFromTicket(
+    @ParamUUID('orgId') orgId: UUID,
+    @Body() body: AssignTicketTeamDTO,
+  ) {
+    const { ticket_id, team_id } = body;
+
+    await this.ticketService.removeTeamToTicket(orgId, ticket_id, team_id);
+
+    return {
+      code: 200,
+      message: 'Successfully removed team from ticket',
     };
   }
 }

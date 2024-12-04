@@ -63,6 +63,14 @@ export class InstagramController {
     }
 
     const result = InstagramWebhookSchema.safeParse(content);
+
+    this.channelService.logEvent(
+      'instagram',
+      content,
+      !result.success ? JSON.parse(JSON.stringify(result.error)) : undefined,
+      result.success,
+    );
+
     if (!result.success) {
       return null;
     }

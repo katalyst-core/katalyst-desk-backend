@@ -1,6 +1,8 @@
 import { UUID } from 'crypto';
 
-export interface TicketAgent {
+import { AuditFields } from '.';
+
+export interface TicketAgent extends AuditFields {
   ticketId: UUID;
   agentId: UUID;
   organizationId: UUID;

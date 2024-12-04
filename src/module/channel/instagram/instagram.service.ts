@@ -5,11 +5,7 @@ import { Database } from '@database/database';
 import { InstagramConfig } from './instagram.type';
 import { InstagramAPI } from './instagram.api';
 import { ChannelService } from '../channel.service';
-import {
-  InstagramMessage,
-  InstagramMessageSchema,
-  InstagramWebhook,
-} from './instagram.schema';
+import { InstagramMessage, InstagramWebhook } from './instagram.schema';
 
 @Injectable()
 export class InstagramService {
@@ -26,22 +22,32 @@ export class InstagramService {
         const {
           sender: { id: senderId },
           recipient: { id: recipientId },
-          message: { mid: messageCode },
           message,
+          read,
           timestamp,
         } = messaging;
 
-        const parsedMessage = InstagramMessageSchema.safeParse(message);
-        const newMessage = parsedMessage.data;
+        if (message) {
+          const { mid: messageCode } = message;
 
-        this.channelService.registerMessage({
-          senderId,
-          recipientId,
-          messageCode,
-          timestamp: new Date(timestamp),
-          message: newMessage,
-          channelType: 'instagram',
-        });
+          this.channelService.registerMessage({
+            senderId,
+            recipientId,
+            messageCode,
+            timestamp: new Date(timestamp),
+            message,
+            channelType: 'instagram',
+          });
+        }
+
+        if (read) {
+          const { mid: messageCode } = read;
+
+          this.channelService.updateMessage({
+            messageCode,
+            status: 'read',
+          });
+        }
       }),
     );
   }

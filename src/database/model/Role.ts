@@ -1,7 +1,9 @@
 import { Generated } from 'kysely';
 import { UUID } from 'crypto';
 
-export interface Role {
+import { AuditFields } from '.';
+
+export interface Role extends AuditFields {
   roleId: Generated<UUID>;
   roleName: string;
   organizationId: UUID;

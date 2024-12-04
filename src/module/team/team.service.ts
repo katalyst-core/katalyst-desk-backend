@@ -23,6 +23,19 @@ export class TeamService {
   }
 
   async createTeam(name: string, orgId: UUID) {
+    const teams = await this.db
+      .selectFrom('team')
+      .select(({ fn }) => [fn.countAll().as('count')])
+      .where('team.organizationId', '=', orgId)
+      .executeTakeFirst();
+
+    if (Number(teams.count) > 25) {
+      throw new BadRequestException({
+        message: 'You can only create 25 teams',
+        code: 'MAXIMUM_TEAM_LIMIT',
+      });
+    }
+
     await this.db
       .insertInto('team')
       .values({

@@ -74,4 +74,27 @@ export class WhatsAppAPI {
       ),
     );
   }
+
+  async readMessage(
+    channelAccount: string,
+    messageCode: string,
+    accessToken: string,
+  ) {
+    return await lastValueFrom(
+      this.http.post(
+        `https://graph.facebook.com/v21.0/${channelAccount}/messages`,
+        JSON.stringify({
+          messaging_product: 'whatsapp',
+          status: 'read',
+          message_id: messageCode,
+        }),
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
+    );
+  }
 }

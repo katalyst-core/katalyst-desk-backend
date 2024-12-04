@@ -1,6 +1,8 @@
 import { UUID } from 'crypto';
 
-export interface AgentRole {
+import { AuditFields } from '.';
+
+export interface AgentRole extends AuditFields {
   roleId: UUID;
   agentId: UUID;
   organizationId: UUID;

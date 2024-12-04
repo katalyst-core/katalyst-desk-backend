@@ -12,4 +12,6 @@ export interface Ticket extends AuditFields {
   channelCustomerId: UUID;
   channelId: UUID;
   ticketStatus: TicketStatusId;
+  conversationId: string;
+  conversationExpiration: Date;
 }
