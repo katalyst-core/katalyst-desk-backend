@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { randomUUID, UUID } from 'crypto';
+import { UUID } from 'crypto';
 import * as crypto from 'crypto';
 
-import { shortenUUID } from '@util/.';
 import { Database } from '@database/database';
 import { OrganizationService } from '@module/organization/organization.service';
 
@@ -13,6 +12,7 @@ import { InstagramMessageSchema } from './instagram/instagram.schema';
 import { TicketMessageResponseDTO } from './dto/ticket-message-response-dto';
 import { TicketUpdateResponseDTO } from '../ticket/dto/ticket-update-response-dto';
 import { ChannelTypeId } from '@database/model/ChannelType';
+import { formatDate } from 'date-fns';
 
 @Injectable()
 export class ChannelService {
@@ -53,6 +53,17 @@ export class ChannelService {
   verifySHA256(body: string, signature: string, secret: string) {
     const hash = crypto.createHmac('sha256', secret).update(body).digest('hex');
     return signature === `sha256=${hash}`;
+  }
+
+  getTicketNumber(channelType: ChannelTypeId, num: number) {
+    const now = new Date(Date.now());
+
+    const channels = {
+      instagram: 'IG',
+      whatsapp: 'WA',
+    };
+
+    return `${channels[channelType]}${formatDate(now, 'yyyyMMdd')}${String(num).padStart(5, '0')}`;
   }
 
   async registerMessage(data: RegisterMessage) {
@@ -144,10 +155,21 @@ export class ChannelService {
                 .executeTakeFirst();
             }
 
-            // TODO: Replace with a proper ticket code
-            const ticketCode = shortenUUID(randomUUID());
             const { organizationId, channelId } = channel;
             const { channelCustomerId } = channelCustomer;
+
+            const total = await tx
+              .selectFrom('ticket')
+              .select(({ fn }) => [
+                fn.count<number>('ticket.ticketId').as('ticketCount'),
+              ])
+              .where('organizationId', '=', organizationId)
+              .executeTakeFirst();
+
+            const ticketCode = this.getTicketNumber(
+              channelType,
+              total.ticketCount,
+            );
 
             isTicketNew = true;
             ticket = await tx
