@@ -37,6 +37,10 @@ export class ApiConfigService {
     return this.configService.get('JWT_GATEWAY_EXPIRY', { infer: true });
   }
 
+  get getResendAPIKey(): string {
+    return this.configService.get('RESEND_API_KEY', { infer: true });
+  }
+
   get getFacebookToken(): string {
     return this.configService.get('FACEBOOK_TOKEN', { infer: true });
   }

@@ -19,6 +19,7 @@ import { ApiConfigService } from './api-config.service';
         JWT_ACCESS_EXPIRY: Joi.number().required(),
         JWT_REFRESH_EXPIRY: Joi.number().required(),
         JWT_GATEWAY_EXPIRY: Joi.number().required(),
+        RESEND_API_KEY: Joi.string().required(),
 
         FACEBOOK_TOKEN: Joi.string().required(),
         FACEBOOK_CLIENT_ID: Joi.string().required(),

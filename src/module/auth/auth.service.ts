@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { UUID } from 'crypto';
 import { CookieOptions } from 'express';
@@ -6,10 +10,15 @@ import * as bcrypt from 'bcrypt';
 
 import { Database } from '@database/database';
 import { ApiConfigService } from '@config/api-config.service';
-import { generateUUID, restoreUUID, shortenUUID } from '@util/.';
+import { generateUUID, restoreUUID, sendEmail, shortenUUID } from '@util/.';
 
 import { NewAgentDTO } from './dto/new-agent-dto';
-import { AgentAccessJWT, AgentGatewayJWT, AgentRefreshJWT } from './auth.type';
+import {
+  AgentAccessJWT,
+  AgentEmailVerification,
+  AgentGatewayJWT,
+  AgentRefreshJWT,
+} from './auth.type';
 
 @Injectable()
 export class AuthService {
@@ -57,7 +66,95 @@ export class AuthService {
           createdBy: agent.agentId,
         })
         .execute();
+
+      const tokenPrivateKey = this.config.getJWTAccessPrivateKey;
+
+      const payload = {
+        sub: shortenUUID(agent.agentId),
+        action: 'verify-email',
+      } satisfies AgentEmailVerification;
+
+      const options = {
+        algorithm: 'RS256',
+        privateKey: tokenPrivateKey,
+        expiresIn: `86400s`, // 24 Hours
+      } satisfies JwtSignOptions;
+
+      const token = this.jwt.sign(payload, options);
+
+      await sendEmail(
+        this.config.getResendAPIKey,
+        email,
+        'Email Verification',
+        'verify-email',
+        {
+          FRONTEND_URL: this.config.getAppFrontendURL,
+          EMAIL_VERIFICATION_URL: `https://katalystdesk.com/auth/verify?token=${token}`,
+        },
+      );
     });
+  }
+
+  async isEmailVerified(agentId: UUID) {
+    const agent = await this.db
+      .selectFrom('agent')
+      .select(['agent.agentId'])
+      .where('agent.agentId', '=', agentId)
+      .where('agent.isEmailVerified', '=', true)
+      .executeTakeFirst();
+
+    if (!agent) {
+      throw new UnauthorizedException({
+        message: 'Email address is not verified',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
+  }
+
+  async verifyEmail(token: string) {
+    const tokenPrivateKey = this.config.getJWTAccessPrivateKey;
+
+    const jwtToken = await this.jwt
+      .verifyAsync(token, {
+        secret: tokenPrivateKey,
+      })
+      .catch(() => {
+        throw new BadRequestException({
+          message: 'Invalid Token',
+          code: 'INVALID_TOKEN',
+        });
+      });
+
+    if (!jwtToken || !(jwtToken satisfies AgentEmailVerification)) {
+      throw new BadRequestException({
+        message: 'Invalid token',
+        code: 'INVALID_TOKEN',
+      });
+    }
+
+    const agentId = restoreUUID(jwtToken.sub);
+
+    const agent = await this.db
+      .selectFrom('agent')
+      .select(['agent.agentId'])
+      .where('agent.agentId', '=', agentId)
+      .where('agent.isEmailVerified', '=', false)
+      .executeTakeFirst();
+
+    if (!agent) {
+      throw new BadRequestException({
+        message: 'Email is already verified',
+        code: 'EMAIL_ALREADY_VERIFIED',
+      });
+    }
+
+    await this.db
+      .updateTable('agent')
+      .set({
+        isEmailVerified: true,
+      })
+      .where('agent.agentId', '=', agentId)
+      .execute();
   }
 
   createAccessToken(agentId: UUID) {

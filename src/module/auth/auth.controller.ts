@@ -10,6 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CookieOptions, Request, Response } from 'express';
+import { UUID } from 'crypto';
+
+import { Agent } from '@decorator/param';
 
 import { AgentBasicAuth, AgentRefresh } from './auth.type';
 import { AuthService } from './auth.service';
@@ -19,6 +22,7 @@ import { JWTAccess } from './strategy/jwt-access.strategy';
 import { NewAgentDTO } from './dto/new-agent-dto';
 import { AccessTokenResponseDTO } from './dto/access-token-response-dto';
 import { GatewayTokenResponseDTO } from './dto/gateway-token-response-dto';
+import { VerifyEmailDTO } from './dto/verify-email-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -47,6 +51,8 @@ export class AuthController {
 
     const user = req.user as AgentBasicAuth;
     const { agentId } = user;
+
+    await this.authService.isEmailVerified(agentId);
 
     const { name, value, options } =
       await this.authService.createRefreshToken(agentId);
@@ -117,10 +123,7 @@ export class AuthController {
 
   @UseGuards(JWTAccess)
   @Post('gateway')
-  async getGatewayToken(@Req() req: Request, @Ip() ip: any) {
-    const user = req.user as AgentRefresh;
-    const { agentId } = user;
-
+  async getGatewayToken(@Agent() agentId: UUID, @Ip() ip: any) {
     const gatewayToken = this.authService.createGatewayToken(agentId, ip);
 
     return {
@@ -132,6 +135,18 @@ export class AuthController {
       options: {
         dto: GatewayTokenResponseDTO,
       },
+    };
+  }
+
+  @Post('verify-email')
+  async verifyEmail(@Body() body: VerifyEmailDTO) {
+    const { token } = body;
+
+    await this.authService.verifyEmail(token);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully verified email address',
     };
   }
 }

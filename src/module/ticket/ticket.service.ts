@@ -1,17 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
+import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import { sql } from 'kysely';
 
 import { Database } from '@database/database';
 import { executeWithTableOptions, restoreUUID } from '@util/.';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
-
 import { ChannelService } from '@module/channel/channel.service';
 import { WhatsAppService } from '@module/channel/whatsapp/whatsapp.service';
 import { InstagramService } from '@module/channel/instagram/instagram.service';
 import { OrganizationService } from '@module/organization/organization.service';
+
 import { TicketUpdateResponseDTO } from './dto/ticket-update-response-dto';
-import { jsonArrayFrom } from 'kysely/helpers/postgres';
-import { sql } from 'kysely';
 
 @Injectable()
 export class TicketService {
