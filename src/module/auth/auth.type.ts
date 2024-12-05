@@ -26,3 +26,8 @@ export interface AgentRefresh {
 export interface AgentBasicAuth {
   agentId: UUID;
 }
+
+export interface AgentEmailVerification {
+  sub: string;
+  action: 'verify-email';
+}

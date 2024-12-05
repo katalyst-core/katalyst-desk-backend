@@ -1,16 +1,20 @@
-import { PaginatedResponseDTO } from '@dto/paginated-dto';
-import { ResponseDTO } from '@dto/response-dto';
 import { SelectQueryBuilder, Simplify, sql } from 'kysely';
 import { BadRequestException } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
 import { UUID } from 'crypto';
 import { customAlphabet } from 'nanoid';
 import { v7 as uuidv7 } from 'uuid';
+import { Resend } from 'resend';
+import { join } from 'path';
 import * as short from 'short-uuid';
+import * as fs from 'fs';
+
+import { ResponseDTO } from '@dto/response-dto';
+import { PaginatedResponseDTO } from '@dto/paginated-dto';
+
 import { TableOptionsDTO } from './dto/table-options-dto';
 
 const DEFAULT_STRING = '0123456789abcdefghijklmnopqrstuvwxyz';
-
 const translator = short();
 
 export const shortenUUID = (value: UUID): string => {
@@ -147,4 +151,34 @@ export const executeWithTableOptions = async <T>(
   };
 
   return data;
+};
+
+export const sendEmail = async (
+  key: string,
+  to: string,
+  subject: string,
+  template: string,
+  content?: Record<string, string>,
+) => {
+  const resend = new Resend(key);
+
+  try {
+    let data = fs.readFileSync(
+      join(process.cwd(), `/src/template/email/${template}.html`),
+      'utf-8',
+    );
+
+    Object.entries(content).forEach(([key, value]) => {
+      data = data.replaceAll(`{${key}}`, value);
+    });
+
+    await resend.emails.send({
+      from: 'Katalyst Desk <no-reply@katalystdesk.com>',
+      to: [to],
+      subject,
+      html: data,
+    });
+  } catch (err) {
+    console.log(err);
+  }
 };
