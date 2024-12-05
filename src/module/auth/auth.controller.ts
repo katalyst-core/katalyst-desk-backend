@@ -23,6 +23,8 @@ import { NewAgentDTO } from './dto/new-agent-dto';
 import { AccessTokenResponseDTO } from './dto/access-token-response-dto';
 import { GatewayTokenResponseDTO } from './dto/gateway-token-response-dto';
 import { VerifyEmailDTO } from './dto/verify-email-dto';
+import { ForgetPasswordDTO } from './dto/forget-password-dto';
+import { ResetPasswordDTO } from './dto/reset-password-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -147,6 +149,30 @@ export class AuthController {
     return {
       status: HttpStatus.OK,
       message: 'Successfully verified email address',
+    };
+  }
+
+  @Post('forget-password')
+  async requestForgetPassword(@Body() body: ForgetPasswordDTO) {
+    const { email } = body;
+
+    await this.authService.requestForgetPassword(email);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully sent forget password email',
+    };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDTO) {
+    const { token, new_password } = body;
+
+    await this.authService.resetPassword(token, new_password);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully reset password',
     };
   }
 }
