@@ -5,6 +5,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Post,
   Query,
   UseGuards,
@@ -50,6 +51,8 @@ import { NewOrganizationDTO } from './dto/new-organization-dto';
 import { NewOrganizationResponseDTO } from './dto/new-organization-response-dto';
 import { OrganizationInfoResponseDTO } from './dto/organization-info-response-dto';
 import { AssignTicketTeamDTO } from '@module/ticket/dto/assign-ticket-team-dto';
+import { DashboardOptionsDTO } from './dto/dashboard-options-dto';
+import { DashboardResponseDTO } from './dto/dashboard-response-dto';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
@@ -357,6 +360,25 @@ export class OrganizationController {
     return {
       code: 200,
       message: 'Successfully removed team from ticket',
+    };
+  }
+
+  @Get('/:orgId/dashboard')
+  async getDashboardDetails(
+    @ParamUUID('orgId') orgId: UUID,
+    @Query() params: DashboardOptionsDTO,
+  ) {
+    const { month, year } = params;
+
+    const data = await this.orgService.getDashboardDetails(orgId, month, year);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully retrieved dashboard details',
+      data,
+      options: {
+        dto: DashboardResponseDTO,
+      },
     };
   }
 }
