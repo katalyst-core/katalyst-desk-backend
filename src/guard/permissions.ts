@@ -15,6 +15,7 @@ export const CHANNEL_LIST = BigInt(0x1000);
 export const CHANNEL_MANAGE = BigInt(0x2000);
 export const AGENT_ROLE_LIST = BigInt(0x4000);
 export const AGENT_ROLE_MANAGE = BigInt(0x8000);
+export const ORG_MANAGE = BigInt(0x10000);
 
 export const defaultRoles = [
   {

@@ -40,6 +40,7 @@ import {
   AGENT_TEAM_MANAGE,
   CHANNEL_LIST,
   NO_PERM,
+  ORG_MANAGE,
   TEAM_LIST,
   TEAM_MANAGE,
   TICKET_LIST,
@@ -53,6 +54,7 @@ import { OrganizationInfoResponseDTO } from './dto/organization-info-response-dt
 import { AssignTicketTeamDTO } from '@module/ticket/dto/assign-ticket-team-dto';
 import { DashboardOptionsDTO } from './dto/dashboard-options-dto';
 import { DashboardResponseDTO } from './dto/dashboard-response-dto';
+import { ModifyOrganizationDTO } from './dto/modify-organization-dto';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
@@ -85,8 +87,11 @@ export class OrganizationController {
 
   @PermGuard([NO_PERM])
   @Get('/:orgId/info')
-  async getOrganizationInfo(@ParamUUID('orgId') orgId: UUID) {
-    const data = await this.orgService.getOrganizationById(orgId);
+  async getOrganizationInfo(
+    @Agent() agentId: UUID,
+    @ParamUUID('orgId') orgId: UUID,
+  ) {
+    const data = await this.orgService.getOrganizationById(agentId, orgId);
 
     return {
       code: 200,
@@ -379,6 +384,31 @@ export class OrganizationController {
       options: {
         dto: DashboardResponseDTO,
       },
+    };
+  }
+
+  @PermGuard([ORG_MANAGE])
+  @Post('/:orgId/modify')
+  async modifyOrganization(
+    @ParamUUID('orgId') orgId: UUID,
+    @Body() body: ModifyOrganizationDTO,
+  ) {
+    await this.orgService.modifyOrganization(orgId, body);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully modified organization',
+    };
+  }
+
+  @PermGuard([ORG_MANAGE])
+  @Delete('/:orgId')
+  async deleteOrganization(@ParamUUID('orgId') orgId: UUID) {
+    await this.orgService.deleteOrganization(orgId);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully deleted organization',
     };
   }
 }

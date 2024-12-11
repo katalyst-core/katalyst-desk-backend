@@ -5,6 +5,7 @@ import { UUID } from 'crypto';
 import { Database } from '@database/database';
 import { TableOptionsDTO } from '@util/dto/table-options-dto';
 import { executeWithTableOptions } from '@util/index';
+import { ModifyAgentDTO } from './dto/modify-agent-dto';
 
 @Injectable()
 export class AgentService {
@@ -158,6 +159,18 @@ export class AgentService {
       .where('agentRole.organizationId', '=', organizationId)
       .where('agentRole.agentId', '=', agentId)
       .where('agentRole.roleId', '=', roleId)
+      .execute();
+  }
+
+  async modifyAgent(agentId: UUID, data: ModifyAgentDTO) {
+    const { name } = data;
+
+    await this.db
+      .updateTable('agent')
+      .set({
+        name,
+      })
+      .where('agent.agentId', '=', agentId)
       .execute();
   }
 }

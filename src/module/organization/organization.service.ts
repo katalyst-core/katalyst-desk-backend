@@ -4,7 +4,7 @@ import { UUID } from 'crypto';
 import { Database } from '@database/database';
 
 import { defaultRoles } from '@guard/permissions';
-import { toBinary } from '@util/index';
+import { toBigInt, toBinary } from '@util/index';
 import { ChannelGateway } from '@module/channel/channel.gateway';
 import { WsTypes } from '@websocket/websocket.type';
 import { ResponseDTO } from '@dto/response-dto';
@@ -12,6 +12,7 @@ import { ResponseDTO } from '@dto/response-dto';
 import { NewOrganizationDTO } from './dto/new-organization-dto';
 import { sql } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import { ModifyOrganizationDTO } from './dto/modify-organization-dto';
 
 @Injectable()
 export class OrganizationService {
@@ -73,7 +74,7 @@ export class OrganizationService {
       .execute();
   }
 
-  async getOrganizationById(orgId: UUID) {
+  async getOrganizationById(agentId: UUID, orgId: UUID) {
     const org = await this.db
       .selectFrom('organization')
       .select(['organization.organizationId', 'organization.name'])
@@ -87,7 +88,41 @@ export class OrganizationService {
       });
     }
 
-    return org;
+    const agent = await this.db
+      .selectFrom('organizationAgent')
+      .select(['organizationAgent.isOwner'])
+      .where('organizationAgent.organizationId', '=', orgId)
+      .where('organizationAgent.agentId', '=', agentId)
+      .executeTakeFirst();
+
+    if (agent.isOwner)
+      return {
+        ...org,
+        permission: '-1',
+      };
+
+    const roles = await this.db
+      .selectFrom('role')
+      .leftJoin('agentRole', 'agentRole.roleId', 'role.roleId')
+      .select(['role.permission', 'agentRole.agentId'])
+      .where('role.organizationId', '=', orgId)
+      .where((eb) =>
+        eb.or([
+          eb('agentRole.agentId', '=', agentId),
+          eb('role.isDefault', '=', true),
+        ]),
+      )
+      .execute();
+
+    const agentPerm = roles.reduce(
+      (prev, curr) => prev | toBigInt(curr.permission),
+      BigInt('0'),
+    );
+
+    return {
+      ...org,
+      permission: agentPerm.toString(),
+    };
   }
 
   async sendGatewayMessage<T extends ResponseDTO = any>(
@@ -236,5 +271,24 @@ export class OrganizationService {
       .executeTakeFirst();
 
     return dashboard;
+  }
+
+  async modifyOrganization(orgId: UUID, data: ModifyOrganizationDTO) {
+    const { name } = data;
+
+    await this.db
+      .updateTable('organization')
+      .set({
+        name,
+      })
+      .where('organization.organizationId', '=', orgId)
+      .execute();
+  }
+
+  async deleteOrganization(orgId: UUID) {
+    await this.db
+      .deleteFrom('organization')
+      .where('organization.organizationId', '=', orgId)
+      .execute();
   }
 }

@@ -11,4 +11,7 @@ export class OrganizationInfoResponseDTO extends ResponseDTO {
 
   @Expose({ name: 'name' })
   name: string;
+
+  @Expose({ name: 'permission' })
+  permission: string;
 }
