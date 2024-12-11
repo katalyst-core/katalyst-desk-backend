@@ -282,7 +282,7 @@ export class TicketService {
   async closeTicket(ticketId: UUID) {
     const ticket = await this.db
       .updateTable('ticket')
-      .set({ ticketStatus: 'close' })
+      .set({ ticketStatus: 'close', updatedAt: new Date(Date.now()) })
       .where('ticket.ticketId', '=', ticketId)
       .returning([
         'ticket.ticketId',

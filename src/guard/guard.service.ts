@@ -89,17 +89,19 @@ export class GuardService {
       .leftJoin('agentTeam', 'agentTeam.teamId', 'ticketTeam.teamId')
       .select(['ticket.ticketId'])
       .where('ticket.ticketId', '=', ticketId)
-      .where((eb) =>
-        eb.or([
-          eb.and([
-            eb('ticketAgent.ticketId', 'is', null),
-            eb('ticketTeam.ticketId', 'is', null),
-          ]),
-          eb('ticketAgent.agentId', '=', agentId),
-          eb('agentTeam.agentId', '=', agentId),
-        ]),
-      )
+      // .where((eb) =>
+      //   eb.or([
+      //     eb.and([
+      //       eb('ticketAgent.ticketId', 'is', null),
+      //       eb('ticketTeam.ticketId', 'is', null),
+      //     ]),
+      //     eb('ticketAgent.agentId', '=', agentId),
+      //     eb('agentTeam.agentId', '=', agentId),
+      //   ]),
+      // )
       .executeTakeFirst();
+
+    console.log(hasTicketAccess);
 
     const hasAccess = await this.hasAccessToOrganization(
       permissions,

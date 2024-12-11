@@ -31,3 +31,8 @@ export interface AgentEmailVerification {
   sub: string;
   action: 'verify-email';
 }
+
+export interface AgentResetPassword {
+  sub: string;
+  action: 'reset-password';
+}

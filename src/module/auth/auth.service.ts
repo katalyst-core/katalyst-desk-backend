@@ -18,6 +18,7 @@ import {
   AgentEmailVerification,
   AgentGatewayJWT,
   AgentRefreshJWT,
+  AgentResetPassword,
 } from './auth.type';
 
 @Injectable()
@@ -68,6 +69,7 @@ export class AuthService {
         .execute();
 
       const tokenPrivateKey = this.config.getJWTAccessPrivateKey;
+      const FRONTEND_URL = this.config.getAppFrontendURL;
 
       const payload = {
         sub: shortenUUID(agent.agentId),
@@ -88,8 +90,8 @@ export class AuthService {
         'Email Verification',
         'verify-email',
         {
-          FRONTEND_URL: this.config.getAppFrontendURL,
-          EMAIL_VERIFICATION_URL: `https://katalystdesk.com/auth/verify?token=${token}`,
+          FRONTEND_URL,
+          EMAIL_VERIFICATION_URL: `${FRONTEND_URL}/auth/verify?token=${token}`,
         },
       );
     });
@@ -295,5 +297,92 @@ export class AuthService {
     const token = this.jwt.sign(payload, options);
 
     return token;
+  }
+
+  async requestForgetPassword(email: string) {
+    const agent = await this.db
+      .selectFrom('agent')
+      .select(['agent.agentId'])
+      .where('agent.email', '=', email)
+      .executeTakeFirst();
+
+    if (!agent) return;
+
+    const tokenPrivateKey = this.config.getJWTAccessPrivateKey;
+    const FRONTEND_URL = this.config.getAppFrontendURL;
+
+    const payload = {
+      sub: shortenUUID(agent.agentId),
+      action: 'reset-password',
+    } satisfies AgentResetPassword;
+
+    const options = {
+      algorithm: 'RS256',
+      privateKey: tokenPrivateKey,
+      expiresIn: `86400s`, // 24 Hours
+    } satisfies JwtSignOptions;
+
+    const token = this.jwt.sign(payload, options);
+
+    await sendEmail(
+      this.config.getResendAPIKey,
+      email,
+      'Reset Password',
+      'reset-password',
+      {
+        FRONTEND_URL,
+        RESET_PASSWORD_URL: `${FRONTEND_URL}/auth/reset-password?token=${token}`,
+      },
+    );
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const tokenPrivateKey = this.config.getJWTAccessPrivateKey;
+
+    const jwtToken = await this.jwt
+      .verifyAsync(token, {
+        secret: tokenPrivateKey,
+      })
+      .catch(() => {
+        throw new BadRequestException({
+          message: 'Invalid Token',
+          code: 'INVALID_TOKEN',
+        });
+      });
+
+    if (!jwtToken || !(jwtToken satisfies AgentResetPassword)) {
+      throw new BadRequestException({
+        message: 'Invalid token',
+        code: 'INVALID_TOKEN',
+      });
+    }
+
+    const agentId = restoreUUID(jwtToken.sub);
+
+    const agent = await this.db
+      .selectFrom('agentAuth')
+      .select(['agentAuth.agentId'])
+      .where('agentAuth.agentId', '=', agentId)
+      .where('agentAuth.authType', '=', 'basic')
+      .executeTakeFirst();
+
+    if (!agent) {
+      throw new BadRequestException({
+        message: 'Unable to find account',
+        code: 'CANNOT_FIND_ACCOUNT',
+      });
+    }
+
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    await this.db
+      .updateTable('agentAuth')
+      .set({
+        authValue: passwordHash,
+      })
+      .where('agentAuth.agentId', '=', agentId)
+      .where('agentAuth.authType', '=', 'basic')
+      .execute();
   }
 }
