@@ -25,5 +25,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            katalyst-desk/katalyst-desk-backend:latest
+            katalystdesk/katalyst-desk-backend:latest
           platforms: linux/amd64
