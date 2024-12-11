@@ -83,11 +83,13 @@ export class AuthController {
     const user = req.user as AgentRefresh;
     const { agentId, sessionToken } = user;
 
-    const { name, value, options } = await this.authService.createRefreshToken(
-      agentId,
-      sessionToken,
-    );
-    res.cookie(name, value, options);
+    void sessionToken;
+
+    // const { name, value, options } = await this.authService.createRefreshToken(
+    //   agentId,
+    //   sessionToken,
+    // );
+    // res.cookie(name, value, options);
 
     const accessToken = this.authService.createAccessToken(agentId);
 
