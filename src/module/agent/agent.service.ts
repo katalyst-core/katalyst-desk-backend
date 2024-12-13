@@ -93,19 +93,32 @@ export class AgentService {
   }
 
   async removeAgentFromOrganization(orgId: UUID, agentId: UUID) {
-    const orgAgent = await this.db
-      .deleteFrom('organizationAgent')
+    const agent = await this.db
+      .selectFrom('organizationAgent')
+      .select(['organizationAgent.isOwner'])
       .where('organizationAgent.agentId', '=', agentId)
       .where('organizationAgent.organizationId', '=', orgId)
-      .returning(['organizationAgent.agentId'])
       .executeTakeFirst();
 
-    if (!orgAgent) {
+    if (!agent) {
       throw new BadRequestException({
         message: `Agent doesn't exist`,
         code: 'NO_AGENT',
       });
     }
+
+    if (agent.isOwner) {
+      throw new BadRequestException({
+        message: 'Cannot remove organization owner',
+        code: 'CANNOT_REMOVE_ORGANIZATION_OWNER',
+      });
+    }
+
+    await this.db
+      .deleteFrom('organizationAgent')
+      .where('organizationAgent.agentId', '=', agentId)
+      .where('organizationAgent.organizationId', '=', orgId)
+      .execute();
   }
 
   async addAgentToTeam(organizationId: UUID, agentId: UUID, teamId: UUID) {

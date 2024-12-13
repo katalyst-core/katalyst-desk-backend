@@ -1,6 +1,5 @@
 import { UUID } from 'crypto';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -212,16 +211,7 @@ export class OrganizationController {
   async removeAgent(
     @ParamUUID('orgId') orgId: UUID,
     @ParamUUID('agentId') agentId: UUID,
-    @Guard() guardAccess: GuardAccess,
   ) {
-    const { isOwner } = guardAccess;
-    if (isOwner) {
-      throw new BadRequestException({
-        message: `Can't remove organization owner`,
-        code: 'REMOVE_OWNER_NOT_ALLOWED',
-      });
-    }
-
     await this.agentService.removeAgentFromOrganization(orgId, agentId);
 
     return {
