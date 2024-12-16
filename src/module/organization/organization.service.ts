@@ -291,4 +291,20 @@ export class OrganizationService {
       .where('organization.organizationId', '=', orgId)
       .execute();
   }
+
+  async getWelcomeMessage(orgId: UUID) {
+    return await this.db
+      .selectFrom('organization')
+      .select(['organization.welcomeMessage'])
+      .where('organization.organizationId', '=', orgId)
+      .executeTakeFirst();
+  }
+
+  async updateWelcomeMessage(orgId: UUID, message: string) {
+    await this.db
+      .updateTable('organization')
+      .set({ welcomeMessage: message })
+      .where('organization.organizationId', '=', orgId)
+      .executeTakeFirst();
+  }
 }

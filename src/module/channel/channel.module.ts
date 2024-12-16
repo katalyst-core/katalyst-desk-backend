@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 
 import { WebsocketModule } from '@websocket/websocket.module';
 import { OrganizationModule } from '@module/organization/organization.module';
+import { TicketModule } from '@module/ticket/ticket.module';
 
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ChannelGateway } from './channel.gateway';
@@ -14,6 +15,7 @@ import { FacebookModule } from './facebook/facebook.module';
   imports: [
     forwardRef(() => WebsocketModule),
     forwardRef(() => OrganizationModule),
+    forwardRef(() => TicketModule),
     WhatsAppModule,
     InstagramModule,
     FacebookModule,

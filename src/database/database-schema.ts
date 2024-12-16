@@ -112,6 +112,7 @@ export const organization = pgTable(
   {
     organizationId: uuid('organization_id').notNull().defaultRandom(),
     name: varchar('name').notNull(),
+    welcomeMessage: varchar('welcome_message'),
     ...AuditFields,
   },
   (t) => [primaryKey({ columns: [t.organizationId] })],

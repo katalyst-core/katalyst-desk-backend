@@ -1,0 +1,1 @@
+ALTER TABLE "organization" RENAME COLUMN "auto_reply" TO "welcome_message";

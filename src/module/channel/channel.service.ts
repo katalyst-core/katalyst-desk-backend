@@ -1,9 +1,17 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { UUID } from 'crypto';
 import * as crypto from 'crypto';
+import { formatDate } from 'date-fns';
 
 import { Database } from '@database/database';
 import { OrganizationService } from '@module/organization/organization.service';
+import { TicketService } from '@module/ticket/ticket.service';
+import { ChannelTypeId } from '@database/model/ChannelType';
 
 import { ChannelMessage, RegisterMessage, UpdateMessage } from './channel.type';
 import { WhatsAppMessageSchema } from './whatsapp/whatsapp.schema';
@@ -11,14 +19,14 @@ import { NewTicketResponseDTO } from './dto/new-ticket-response-dto';
 import { InstagramMessageSchema } from './instagram/instagram.schema';
 import { TicketMessageResponseDTO } from './dto/ticket-message-response-dto';
 import { TicketUpdateResponseDTO } from '../ticket/dto/ticket-update-response-dto';
-import { ChannelTypeId } from '@database/model/ChannelType';
-import { formatDate } from 'date-fns';
 
 @Injectable()
 export class ChannelService {
   constructor(
     private readonly db: Database,
     private readonly orgService: OrganizationService,
+    @Inject(forwardRef(() => TicketService))
+    private readonly ticketService: TicketService,
   ) {}
 
   async getChannelAccountsByOrgId(orgId: UUID) {
@@ -188,6 +196,24 @@ export class ChannelService {
                 'ticket.channelCustomerId',
               ])
               .executeTakeFirst();
+
+            const org = await this.db
+              .selectFrom('organization')
+              .select(['organization.welcomeMessage'])
+              .where('organization.organizationId', '=', organizationId)
+              .executeTakeFirst();
+
+            if (
+              org &&
+              org.welcomeMessage != null &&
+              org.welcomeMessage.length > 0
+            ) {
+              await this.ticketService.sendMessage(
+                ticket.ticketId,
+                null,
+                org.welcomeMessage,
+              );
+            }
           }
 
           const { ticketId } = ticket;

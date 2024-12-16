@@ -14,7 +14,7 @@ export type RegisterMessage = {
   message: any;
   channelType: ChannelTypeId;
   customerName?: string;
-  agentId?: UUID;
+  agentId?: UUID | null;
 };
 
 export type UpdateMessage = {

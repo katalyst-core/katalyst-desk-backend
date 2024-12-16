@@ -54,6 +54,8 @@ import { AssignTicketTeamDTO } from '@module/ticket/dto/assign-ticket-team-dto';
 import { DashboardOptionsDTO } from './dto/dashboard-options-dto';
 import { DashboardResponseDTO } from './dto/dashboard-response-dto';
 import { ModifyOrganizationDTO } from './dto/modify-organization-dto';
+import { WelcomeMessageDTO } from './dto/welcome-message-dto';
+import { WelcomeMessageResponseDTO } from './dto/welcome-message-response-dto';
 
 @UseGuards(JWTAccess)
 @Controller('organization')
@@ -399,6 +401,37 @@ export class OrganizationController {
     return {
       status: HttpStatus.OK,
       message: 'Successfully deleted organization',
+    };
+  }
+
+  @PermGuard([ORG_MANAGE])
+  @Get('/:orgId/welcome-message')
+  async getWelcomeMessage(@ParamUUID('orgId') orgId: UUID) {
+    const data = await this.orgService.getWelcomeMessage(orgId);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully retrieved welcome message',
+      data,
+      options: {
+        dto: WelcomeMessageResponseDTO,
+      },
+    };
+  }
+
+  @PermGuard([ORG_MANAGE])
+  @Post('/:orgId/welcome-message')
+  async updateWelcomeMessage(
+    @ParamUUID('orgId') orgId: UUID,
+    @Body() body: WelcomeMessageDTO,
+  ) {
+    const { message } = body;
+
+    await this.orgService.updateWelcomeMessage(orgId, message);
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Successfully updated welcome message',
     };
   }
 }

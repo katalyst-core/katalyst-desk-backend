@@ -167,7 +167,7 @@ export class TicketService {
     return messages;
   }
 
-  async sendMessage(ticketId: UUID, agentId: UUID, text: string) {
+  async sendMessage(ticketId: UUID, agentId: UUID | null, text: string) {
     const ticket = await this.db
       .selectFrom('ticket')
       .innerJoin(
