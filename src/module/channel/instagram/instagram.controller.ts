@@ -42,6 +42,10 @@ export class InstagramController {
     const webhookToken = this.config.getInstagramWebhookToken;
     const instagramSecret = this.config.getInstagramAppSecret;
 
+    if (mode === 'subscribe' && webhookToken === verifyToken) {
+      return res.send(challenge);
+    }
+
     if (
       !rawBody ||
       !signature ||
@@ -51,10 +55,6 @@ export class InstagramController {
     }
 
     console.log('instagram: ', rawBody);
-
-    if (mode === 'subscribe' && webhookToken === verifyToken) {
-      return res.send(challenge);
-    }
 
     const content = req.body;
 

@@ -32,7 +32,7 @@ export class WhatsAppController {
   ) {}
 
   @All('webhook')
-  verifyWebhook(@Req() req: Request, @Res() res: Response) {
+  webhook(@Req() req: Request, @Res() res: Response) {
     const signature = req.header('x-hub-signature-256');
     const mode = req.query['hub.mode'];
     const challenge = req.query['hub.challenge'];
@@ -41,6 +41,10 @@ export class WhatsAppController {
 
     const webhookToken = this.config.getWhatsAppWebhookToken;
     const facebookSecret = this.config.getFacebookClientSecret;
+
+    if (mode === 'subscribe' && webhookToken === verifyToken) {
+      return res.send(challenge);
+    }
 
     if (
       !rawBody ||
@@ -51,10 +55,6 @@ export class WhatsAppController {
     }
 
     console.log('whatsapp:', JSON.stringify(req.body));
-
-    if (mode === 'subscribe' && webhookToken === verifyToken) {
-      return res.send(challenge);
-    }
 
     const content = req.body;
 
