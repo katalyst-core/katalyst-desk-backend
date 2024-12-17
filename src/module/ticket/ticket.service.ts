@@ -76,17 +76,7 @@ export class TicketService {
         ).as('teams'),
       ])
       .where('ticket.organizationId', '=', orgId)
-      .where(({ eb, selectFrom }) =>
-        eb(
-          'latestMessage.createdAt',
-          '=',
-          selectFrom('ticketMessage')
-            .select(['ticketMessage.createdAt'])
-            .orderBy('ticketMessage.createdAt', 'desc')
-            .limit(1)
-            .whereRef('ticketMessage.ticketId', '=', 'ticket.ticketId'),
-        ),
-      )
+      
       .where(({ eb, selectFrom }) =>
         eb(
           'ticket.createdAt',

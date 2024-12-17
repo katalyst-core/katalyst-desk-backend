@@ -257,7 +257,7 @@ export const ticketMessage = pgTable(
     messageId: uuid('message_id').notNull().defaultRandom(),
     ticketId: uuid('ticket_id').notNull(),
     agentId: uuid('agent_id'),
-    messageCode: varchar('message_code', { length: 64 }),
+    messageCode: text('message_code'),
     isCustomer: boolean('is_customer').notNull().default(false),
     messageContent: jsonb('message_content').notNull(),
     messageStatus: varchar('message_status', { length: 24 }).notNull(),
@@ -268,7 +268,7 @@ export const ticketMessage = pgTable(
     foreignKey({
       columns: [t.ticketId],
       foreignColumns: [ticket.ticketId],
-    }),
+    }).onDelete('cascade'),
     foreignKey({
       columns: [t.agentId],
       foreignColumns: [agent.agentId],
