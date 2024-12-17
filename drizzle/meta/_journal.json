@@ -92,6 +92,13 @@
       "when": 1734318806090,
       "tag": "0012_lonely_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1734424013054,
+      "tag": "0013_lean_mad_thinker",
+      "breakpoints": true
     }
   ]
 }
