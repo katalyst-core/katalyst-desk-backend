@@ -9,7 +9,6 @@ import { AgentTeam } from './model/AgentTeam';
 import { AgentRole } from './model/AgentRole';
 import { AgentAuth } from './model/AgentAuth';
 import { TicketTeam } from './model/TicketTeam';
-import { TicketAgent } from './model/TicketAgent';
 import { ChannelType } from './model/ChannelType';
 import { TicketStatus } from './model/TicketStatus';
 import { AgentSession } from './model/AgentSession';
@@ -32,7 +31,6 @@ interface Tables {
   agentRole: AgentRole;
   agentAuth: AgentAuth;
   ticketTeam: TicketTeam;
-  ticketAgent: TicketAgent;
   channelType: ChannelType;
   ticketStatus: TicketStatus;
   agentSession: AgentSession;

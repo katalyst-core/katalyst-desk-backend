@@ -309,30 +309,6 @@ export const channel = pgTable(
   ],
 );
 
-export const ticketAgent = pgTable(
-  'ticket_agent',
-  {
-    ticketId: uuid('ticket_id').notNull(),
-    agentId: uuid('agent_id').notNull(),
-    organizationId: uuid('organization_id').notNull(),
-    ...AuditFields,
-  },
-  (t) => [
-    primaryKey({ columns: [t.ticketId, t.agentId] }),
-    foreignKey({
-      columns: [t.ticketId],
-      foreignColumns: [ticket.ticketId],
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [t.agentId, t.organizationId],
-      foreignColumns: [
-        organizationAgent.agentId,
-        organizationAgent.organizationId,
-      ],
-    }).onDelete('cascade'),
-  ],
-);
-
 export const ticketTeam = pgTable(
   'ticket_team',
   {

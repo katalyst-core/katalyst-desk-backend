@@ -84,7 +84,6 @@ export class GuardService {
 
     const hasTicketAccess = await this.db
       .selectFrom('ticket')
-      .leftJoin('ticketAgent', 'ticketAgent.ticketId', 'ticket.ticketId')
       .leftJoin('ticketTeam', 'ticketTeam.ticketId', 'ticket.ticketId')
       .leftJoin('agentTeam', 'agentTeam.teamId', 'ticketTeam.teamId')
       .select(['ticket.ticketId'])
@@ -100,8 +99,6 @@ export class GuardService {
       //   ]),
       // )
       .executeTakeFirst();
-
-    console.log(hasTicketAccess);
 
     const hasAccess = await this.hasAccessToOrganization(
       permissions,
