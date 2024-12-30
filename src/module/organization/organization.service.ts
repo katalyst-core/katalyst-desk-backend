@@ -236,6 +236,7 @@ export class OrganizationService {
               'avg_response_time_seconds',
             ),
           ])
+          .where('response_time_seconds', 'is not', null)
           .groupBy('organizationId')
           .as('response_time'),
         jsonArrayFrom(
