@@ -238,6 +238,7 @@ export class OrganizationService {
           ])
           .where('response_time_seconds', 'is not', null)
           .groupBy('organizationId')
+          .limit(1)
           .as('response_time'),
         jsonArrayFrom(
           selectFrom('ticket')
