@@ -216,6 +216,7 @@ export class OrganizationService {
                   'response_time_seconds',
                 ),
               ])
+              .where('ticket.organizationId', '=', orgId)
               .where('ticketMessage.isCustomer', '=', true)
               .where(
                 ({ ref }) =>
@@ -252,6 +253,7 @@ export class OrganizationService {
                 'whatsapp',
               ),
             ])
+            .where('ticket.organizationId', '=', orgId)
             .where('channel.channelType', 'in', ['whatsapp', 'instagram'])
             .groupBy('date')
             .orderBy('date'),
@@ -263,6 +265,7 @@ export class OrganizationService {
               'ticketStatus.status_id',
               'ticket.ticketStatus',
             )
+            .where('ticket.organizationId', '=', orgId)
             .select(({ fn }) => [
               'ticketStatus.status_id as status',
               fn.count<number>('ticket.ticketId').as('count'),
